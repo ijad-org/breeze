@@ -61,6 +61,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -145,12 +146,19 @@ fun RemoteScreen(
 
     val context = LocalContext.current
     var state by remember(activeDevice.id) { mutableStateOf(activeDevice.state) }
-    var preset by remember(activeDevice.id) { mutableStateOf<Preset?>(null) }
+    // Saveable so the highlight survives a trip to Timer/Settings and back.
+    var preset by rememberSaveable(activeDevice.id) { mutableStateOf<Preset?>(null) }
     var hint by remember { mutableStateOf<Hint?>(null) }
     var warnedUnsupported by remember(activeDevice.id) { mutableStateOf(false) }
 
-    // A timer may have changed power while we were in the background.
+    // A timer may have changed power while we were in the background…
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { state = activeDevice.state }
+    // …or while this screen is showing. Our own toggles save the same value, so this is a no-op for them.
+    LaunchedEffect(activeDevice.state.poweredOn) {
+        if (state.poweredOn != activeDevice.state.poweredOn) {
+            state = state.copy(poweredOn = activeDevice.state.poweredOn)
+        }
+    }
 
     LaunchedEffect(hint) {
         if (hint != null) {
