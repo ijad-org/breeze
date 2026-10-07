@@ -10,14 +10,19 @@ Point your phone, pick a brand, probe power codes until the AC responds, then co
 
 ## Features (v1)
 
+The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and `docs/design/*.png`.
+
 | Area | Status |
 |------|--------|
-| Splash / welcome | Working |
+| Welcome | Expanding rings + spinning fan, matching the prototype animations |
 | Brand select + search | Working (10 brands) |
-| Find-your-code pairing | Working UI; LG sends real classic 28-bit probes |
-| Remote | Temp dial, Cool/Heat/Dry/Fan, fan + swing, presets (stub IR) |
-| Settings | Paired ACs, local notification toggles, Light/Dark/System, About |
-| Storage | DataStore (brand, configIndex, name) |
+| Find-your-code pairing | Pulsing power probe, prev/next codes, then a "Name this AC" sheet. LG sends real classic 28-bit probes |
+| Remote | Mode-tinted dial and background, Cool/Heat/Dry/Fan/Auto, 4-step fan (Low/Mid/High/Auto), swing, greyed power-off state, per-AC state saved |
+| Presets | Sleep (+1°, low fan), Eco (Cool 26°, auto fan), Turbo (Cool 18°, high fan) |
+| Timer | "Turn off in" / "Turn on at" via AlarmManager. Sends IR when it fires (phone must face the AC), optional reminder notification, survives reboot |
+| Settings | My ACs (rename, remove with confirmation, add), notification toggles, Light/Dark/System, About, Privacy Policy, Terms |
+| Hints | Eco tips (Cool below 22°) and temperature alerts (≤17° or ≥29°) when enabled |
+| Storage | DataStore (devices + remote state, timers, settings) |
 | Ads / accounts | None |
 
 ## IR
@@ -36,7 +41,8 @@ Point your phone, pick a brand, probe power codes until the AC responds, then co
 ## Build
 
 ```bash
-source /workspace/android-build-env.sh   # or set JAVA_HOME / ANDROID_HOME
+export JAVA_HOME=/path/to/jdk-17   # Gradle 8.9 needs JDK 17/21, not 25
+export ANDROID_HOME=~/Library/Android/sdk
 ./gradlew assembleDebug --no-daemon
 ```
 

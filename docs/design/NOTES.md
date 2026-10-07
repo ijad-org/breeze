@@ -1,0 +1,11 @@
+# Make → native translation notes (v2)
+- Everything is in one file, src/App.tsx, with local React state. Theme (`isDark`) lives in App and is passed as a `dark` prop. Settings calls `onDarkChange`. "System" passes null and does **not** follow the OS (no matchMedia), so native needs real system-theme handling.
+- Nothing persists: settings toggles, the AC list, the selected brand/code and the theme reset on reload. You need real storage (DataStore/UserDefaults).
+- My ACs is hardcoded (Living Room/Daikin Code 3, Bedroom/LG Code 7). Edit/Delete/Add AC, the room dropdown, Privacy and Terms have no handlers.
+- The navigation stack is a fake ScreenId switch with a `SCREEN_ORDER` index used to pick the transition direction. Map it to a real nav stack (Navigation Compose / NavigationStack) and native back gestures.
+- Remote and Timer always go "back" to `remote-cool`, so the current mode isn't kept across navigation in the prototype.
+- The glass look uses backdrop-filter blur(20px) plus rgba borders. On Android you need RenderEffect blur (API 31+) or a fallback.
+- Colours come from the MODES table (tint + rgb), and backgrounds use radial gradients per mode and theme. Port these as theme tokens.
+- Icons are the Material Symbols Rounded font. The typeface is Plus Jakarta Sans.
+- There's no IR layer. Power, code testing and presets are UI only.
+- The phone frame is fixed at 360×800 in code. The preview scales it.

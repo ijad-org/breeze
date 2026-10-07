@@ -2,17 +2,19 @@ package com.ijad.breeze.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/** Soft blue accent — Figma Make / Breeze light elevated UI. */
-val BreezeBlue = Color(0xFF3B82F6)
-val BreezeBlueDeep = Color(0xFF2563EB)
-val BreezeBlueSoft = Color(0xFF60A5FA)
-val BreezeGlow = Color(0xFF93C5FD)
-val Ink = Color(0xFF0F172A)
-val InkSoft = Color(0xFF1E293B)
-val Mist = Color(0xFFF1F5F9)
-val MistCard = Color(0xFFFFFFFF)
-val MistElevated = Color(0xFFF8FAFC)
-val Slate = Color(0xFF64748B)
-val Success = Color(0xFF059669)
-val Danger = Color(0xFFDC2626)
-val AccentContainer = Color(0xFFDBEAFE)
+// Tokens from the Figma Make prototype (docs/source/src/App.tsx: MODES, getBg, gss, tc).
+
+val CoolTint = Color(0xFF4F9DFF)
+val HeatTint = Color(0xFFFF9A4D)
+val DryTint = Color(0xFFB28DFF)
+val FanTint = Color(0xFF4FD1A5)
+val AutoTint = Color(0xFF94A3B8)
+
+val SurfaceLight = Color(0xFFF4F7FB)
+val SurfaceDark = Color(0xFF0E1116)
+
+/** Base text colour; always used with an alpha via [ink]. */
+val InkLight = Color(0xFF0E1116)
+val InkDark = Color(0xFFF4F7FB)
+
+val Danger = Color(0xFFFF4D4D)

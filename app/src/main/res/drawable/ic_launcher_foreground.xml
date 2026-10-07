@@ -6,16 +6,16 @@
     android:viewportHeight="108">
     <!-- Four soft fan petals around center -->
     <path
-        android:fillColor="#3B82F6"
+        android:fillColor="#4F9DFF"
         android:pathData="M54,54 m0,-28 c8,-2 14,4 12,12 c-2,8 -10,12 -12,16 c-2,-4 -10,-8 -12,-16 c-2,-8 4,-14 12,-12z" />
     <path
-        android:fillColor="#60A5FA"
+        android:fillColor="#82BBFF"
         android:pathData="M54,54 m28,0 c2,8 -4,14 -12,12 c-8,-2 -12,-10 -16,-12 c4,-2 8,-10 16,-12 c8,-2 14,4 12,12z" />
     <path
-        android:fillColor="#3B82F6"
+        android:fillColor="#4F9DFF"
         android:pathData="M54,54 m0,28 c-8,2 -14,-4 -12,-12 c2,-8 10,-12 12,-16 c2,4 10,8 12,16 c2,8 -4,14 -12,12z" />
     <path
-        android:fillColor="#60A5FA"
+        android:fillColor="#82BBFF"
         android:pathData="M54,54 m-28,0 c-2,-8 4,-14 12,-12 c8,2 12,10 16,12 c-4,2 -8,10 -16,12 c-8,2 -14,-4 -12,-12z" />
     <path
         android:fillColor="#FFFFFF"
