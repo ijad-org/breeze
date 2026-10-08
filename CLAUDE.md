@@ -16,14 +16,14 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 - minSdk 26, target/compile 35, AGP 8.7, Kotlin 2.0, Compose BOM 2024.12.01. Versions are in `gradle/libs.versions.toml`.
 - Repositories go through aliyun mirrors (`settings.gradle.kts`). Avoid adding new dependencies unless needed.
-- There are no unit tests yet. Verify on an emulator or device (see "Verifying UI" below).
+- JVM unit tests: `./gradlew testDebugUnitTest`. They cover `LgIrCodec` frames, `TimerScheduler` time math and `StoreJson` (device/timer JSON, including legacy JSON). UI still has to be verified on an emulator or device (see "Verifying UI" below).
 
 ## Layout
 
 ```
 app/src/main/java/com/ijad/breeze/
   MainActivity.kt          theme resolution + edge-to-edge system bar style
-  data/                    Models (AcBrand, AcDevice, RemoteState, enums), AppRepository (DataStore, JSON device list)
+  data/                    Models (AcBrand, AcDevice, RemoteState, enums), AppRepository (DataStore), StoreJson (device/timer JSON)
   ir/                      IrTransmitter (ConsumerIrManager), BrandIr (pattern lookup), LgIrCodec (real LG 28-bit)
   timer/                   TimerScheduler (AlarmManager), TimerReceiver (fires IR + notification), BootReceiver
   ui/theme/                Breeze tokens: mode tints, surfaces, ink(alpha), Plus Jakarta Sans type
