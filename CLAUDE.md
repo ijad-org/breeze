@@ -3,6 +3,8 @@
 Breeze (`com.ijad.breeze`) is an ad-free, account-free Android IR remote for air conditioners.
 It is written in Kotlin and Jetpack Compose, and the UI is a pixel port of a Figma Make prototype.
 
+> **Continuing work?** Read `docs/HANDOFF.md` first. It lists what is verified, what still needs on-device checks, and the open items.
+
 ## Build & run
 
 ```bash
