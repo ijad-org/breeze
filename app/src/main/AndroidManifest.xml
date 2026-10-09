@@ -22,6 +22,7 @@
         android:theme="@style/Theme.Breeze">
         <activity
             android:name=".MainActivity"
+            android:configChanges="uiMode"
             android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Breeze"
