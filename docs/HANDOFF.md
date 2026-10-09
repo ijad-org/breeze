@@ -22,7 +22,7 @@ The prototype's animations use the exact timings from `index.css`.
 
 Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-timer checks, were done on 2026-10-09 (emulator-5554, API 36). See "Verified on 2026-10-09" below. These are still open:
 
-1. **New launcher icon on other launchers** (Samsung One UI squircle, themed icons on Android 13+).
+1. **New launcher icon on Samsung One UI.** Themed icons are verified on Pixel Launcher (below). The outer ring ends at r≈32.6dp, inside the 33dp safe zone, so a squircle mask shouldn't clip it, but this hasn't been seen on a Samsung launcher.
 2. **Real IR on an LG unit**, still never tried on hardware with an IR blaster.
 
 ### Verified on 2026-10-09
@@ -40,6 +40,7 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 - Small screen (945×1680 px, 360×640 dp): the Remote's upper area scrolls with the Presets sheet pinned, preset chips scroll sideways, and the Timer screen fits.
 - Welcome in dark (system dark after clearing data) matches the light PNG's layout, and the rings animate. Under reduced motion the rings and fan are frozen (identical frames below the status bar).
 - Find code under reduced motion: the pulse is off and frames are identical over a full 2.2 s period.
+- Themed icons (Pixel Launcher, API 36): with Wallpaper & style → Themed icons on, Breeze is drawn from its monochrome layer (rings and fan) and tinted like the system apps. A light rim around it in the dock is the launcher's "Predicted app" ring, not part of the icon.
 - Missed timer after reboot: "Turn off in 00:05" was due at 10:20:45 and the device rebooted at 10:20:29, finishing at 10:22:20. After boot the missed timer was gone from the store with no alarm and no notification. A pending "Turn on at 07:00" on the other AC was rescheduled.
 
 ### Fixed on 2026-10-09
