@@ -1,6 +1,8 @@
 package com.ijad.breeze
 
+import android.app.UiModeManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -12,6 +14,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -56,6 +59,9 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.System -> isSystemInDarkTheme()
             }
 
+            // Tell the system too, so the next launch's splash window uses the in-app theme.
+            if (themeMode != null) LaunchedEffect(mode) { setSystemNightMode(mode) }
+
             // Status/nav bar icons follow the in-app theme, not just the system setting.
             DisposableEffect(dark) {
                 val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT)
@@ -80,5 +86,20 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * API 31+ keeps a per-app night mode that the system uses for the launch splash. Changing it
+     * sends a uiMode config change, which the manifest handles in place, so Compose just recomposes.
+     */
+    private fun setSystemNightMode(mode: ThemeMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        getSystemService(UiModeManager::class.java).setApplicationNightMode(
+            when (mode) {
+                ThemeMode.Light -> UiModeManager.MODE_NIGHT_NO
+                ThemeMode.Dark -> UiModeManager.MODE_NIGHT_YES
+                ThemeMode.System -> UiModeManager.MODE_NIGHT_AUTO
+            }
+        )
     }
 }

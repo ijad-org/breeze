@@ -49,12 +49,14 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 - **Launcher icon.** The manifest pointed at a plain layer-list, so the adaptive icon was never used. It now uses `@mipmap/ic_launcher`, a new design based on the Welcome emblem (Cool rings and the `mode_fan` disc on the dark surface with a Cool glow), plus a monochrome layer for themed icons.
 - **Welcome rings under reduced motion** sat at rest (scale 1), so all four stacked into one bright 160dp ring that looked nothing like the design. They now freeze at evenly spread phases (`ReducedMotionRingFrame`), which looks like a still of the animation.
 
+- **Launch splash ignored the in-app theme.** With the app set to Dark on a light system, the splash was light for a moment. `MainActivity` now passes the theme to `UiModeManager.setApplicationNightMode` (API 31+), and the manifest handles `uiMode` so the switch recomposes in place instead of recreating the activity. Checked on emulator-5554: app Dark on light system gives a dark splash, Light on dark gives a light one, System follows the system, and switching in Settings stays on Settings in the same process.
+
 ## Open items and known limitations (not bugs)
 
 - **IR for non-LG brands is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs (Samsung, Daikin, …) would go in `ir/` next to `LgIrCodec`.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
 - **Timers are app-side.** The phone must be pointed at the AC when the alarm fires. Without the exact-alarm permission (denied by default on Android 14+), the Timer screen shows "Allow exact timing", and alarms otherwise run inexact.
-- **System splash ignores the in-app theme.** With the app set to Dark on a light system, the launch splash is light for a moment. `UiModeManager.setApplicationNightMode` (API 31+) could fix this.
+- **System splash on Android 8–11** still follows the system theme, because `setApplicationNightMode` only exists on API 31+.
 - **Slow debug cold start** (about 25 s observed, but on an overloaded host, so it isn't a reliable number). Consider a release build check and a baseline profile.
 - **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec` (frames, checksums, clamping), `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
 
