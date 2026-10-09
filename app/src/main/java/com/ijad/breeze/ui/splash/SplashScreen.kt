@@ -95,16 +95,20 @@ fun SplashScreen(onGetStarted: () -> Unit) {
     }
 }
 
+/** Under reduced motion the rings freeze here: ring 1..4 are 7/8, 5/8, 3/8, 1/8 into their cycle. */
+private const val ReducedMotionRingFrame = 2625L
+
 /**
  * Four expanding rings — `ring-out` 3s ease-out infinite, delays 0 / .75 / 1.5 / 2.25s
  * (scale .85→1.75, opacity .65→0) — around a fan icon spinning with `fan-spin` 4s linear.
- * Under reduced motion everything stays at rest, like CSS with `animation: none`.
+ * Under reduced motion nothing moves, but the rings freeze at evenly spread phases rather than at
+ * rest, where all four would stack into one bright ring that looks nothing like the design.
  */
 @Composable
 private fun BreezeRings() {
     val tint = CoolTint
     val reduceMotion = LocalReduceMotion.current
-    val elapsed by produceState(0L, reduceMotion) {
+    val elapsed by produceState(if (reduceMotion) ReducedMotionRingFrame else 0L, reduceMotion) {
         if (reduceMotion) return@produceState
         val start = withFrameMillis { it }
         while (true) withFrameMillis { value = it - start }
@@ -117,7 +121,7 @@ private fun BreezeRings() {
             for (i in 1..4) {
                 val delay = (i - 1) * 750L
                 // Before its delay a ring shows its un-animated style (scale 1, opacity 1).
-                val (scale, opacity) = if (reduceMotion || elapsed < delay) {
+                val (scale, opacity) = if (elapsed < delay) {
                     1f to 1f
                 } else {
                     val e = CssEaseOut.transform(((elapsed - delay) % 3000L) / 3000f)

@@ -20,13 +20,10 @@ The prototype's animations use the exact timings from `index.css`.
 
 ## Pending: verify on a device or emulator
 
-Items 1 to 11 from the previous plan were checked on 2026-10-09 (emulator-5554, API 36). See "Verified on 2026-10-09" below. These are still open:
+Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-timer checks, were done on 2026-10-09 (emulator-5554, API 36). See "Verified on 2026-10-09" below. These are still open:
 
-1. **Welcome screen in dark mode, and its rings under reduced motion.** It's only reachable with no paired ACs (or after clearing app data).
-2. **Find code pulse under reduced motion** (animator duration scale 0). The Remote, transitions and fan icon were confirmed static.
-3. **Missed timer dropped after reboot** (`BootReceiver`'s `else repo.removeTimer`). The reboot test only covered the reschedule path, because the reboot finished before any timer was due.
-4. **New launcher icon on other launchers** (Samsung One UI squircle, themed icons on Android 13+).
-5. **Real IR on an LG unit**, still never tried on hardware with an IR blaster.
+1. **New launcher icon on other launchers** (Samsung One UI squircle, themed icons on Android 13+).
+2. **Real IR on an LG unit**, still never tried on hardware with an IR blaster.
 
 ### Verified on 2026-10-09
 
@@ -41,12 +38,16 @@ Items 1 to 11 from the previous plan were checked on 2026-10-09 (emulator-5554, 
 - Reduced motion: screen transitions are instant and the fan icon is static.
 - Predictive back: the clip-reveal follows a slow drag, cancel restores the screen, and commit pops. Push and back-key transitions are unchanged.
 - Small screen (945×1680 px, 360×640 dp): the Remote's upper area scrolls with the Presets sheet pinned, preset chips scroll sideways, and the Timer screen fits.
+- Welcome in dark (system dark after clearing data) matches the light PNG's layout, and the rings animate. Under reduced motion the rings and fan are frozen (identical frames below the status bar).
+- Find code under reduced motion: the pulse is off and frames are identical over a full 2.2 s period.
+- Missed timer after reboot: "Turn off in 00:05" was due at 10:20:45 and the device rebooted at 10:20:29, finishing at 10:22:20. After boot the missed timer was gone from the store with no alarm and no notification. A pending "Turn on at 07:00" on the other AC was rescheduled.
 
 ### Fixed on 2026-10-09
 
 - **Cold-start flash.** The Remote drew its "no AC" empty state for a frame before DataStore loaded, because `devices` started as `emptyList()`. `NavGraph` now collects devices and the active id as one snapshot that starts as null, and draws the Remote only after it loads. This also prevents a wrong-room frame with several ACs.
 - **Predictive back didn't track the gesture.** The manifest was missing `android:enableOnBackInvokedCallback="true"`. Also, `screen()` only treated a screen as popping after the pop was committed. It now also counts "exiting while still on top" (an uncommitted predictive back).
 - **Launcher icon.** The manifest pointed at a plain layer-list, so the adaptive icon was never used. It now uses `@mipmap/ic_launcher`, a new design based on the Welcome emblem (Cool rings and the `mode_fan` disc on the dark surface with a Cool glow), plus a monochrome layer for themed icons.
+- **Welcome rings under reduced motion** sat at rest (scale 1), so all four stacked into one bright 160dp ring that looked nothing like the design. They now freeze at evenly spread phases (`ReducedMotionRingFrame`), which looks like a still of the animation.
 
 ## Open items and known limitations (not bugs)
 
