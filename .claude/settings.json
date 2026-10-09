@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(android screen capture *)",
+      "Bash(adb devices)",
+      "Bash(adb devices *)",
+      "Bash(adb exec-out screencap *)",
+      "Bash(adb -s * exec-out screencap *)",
+      "Bash(android layout *)",
+      "Bash(adb shell dumpsys *)",
+      "Bash(adb -s * shell dumpsys *)",
+      "Bash(adb shell content query *)",
+      "Bash(adb -s * shell content query *)",
+      "Bash(adb shell getprop *)",
+      "Bash(adb -s * shell getprop *)",
+      "Bash(adb shell uiautomator dump *)",
+      "Bash(adb -s * shell uiautomator dump *)",
+      "Bash(adb shell settings get *)",
+      "Bash(adb -s * shell settings get *)",
+      "Bash(adb shell appops get *)",
+      "Bash(adb -s * shell appops get *)",
+      "Bash(android emulator list)"
+    ]
+  }
+}

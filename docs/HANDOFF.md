@@ -1,6 +1,6 @@
 # Breeze: handoff and pending work
 
-Last updated 2026-10-08. The design port and the missing features are done and pushed: `afafae5`, then `fc6b99c`.
+Last updated 2026-10-09. The design port and the missing features are done and pushed: `afafae5`, then `fc6b99c`.
 This file lists what is still **unverified or open**, so a fresh session can continue without the previous chat.
 Read `CLAUDE.md` first for build setup, layout and design tokens.
 
@@ -20,28 +20,40 @@ The prototype's animations use the exact timings from `index.css`.
 
 ## Pending: verify on a device or emulator
 
-Do these in order. Each needs a running device; see "Environment" below first.
+Items 1 to 11 from the previous plan were checked on 2026-10-09 (emulator-5554, API 36). See "Verified on 2026-10-09" below. These are still open:
 
-1. **Preset highlight survives navigation** (`fc6b99c`, `RemoteScreen.kt`: `preset` uses `rememberSaveable`).
-   Tap Eco on the Remote → open Timer → back. Expected: Eco is still highlighted.
-2. **Live power sync** (`fc6b99c`, the `LaunchedEffect(activeDevice.state.poweredOn)` in `RemoteScreen.kt`).
-   Set "Turn off in 00:05" and stay on the Remote. When it fires, the power button and UI should grey out without leaving the screen.
-   With exact alarms off, the alarm can be late. Grant them for testing with `adb shell appops set com.ijad.breeze SCHEDULE_EXACT_ALARM allow`.
-3. **"Turn on at" timer.** Pick a time a few minutes ahead. The summary should read "... turns on at HH:MM" (with "tomorrow" if that time has already passed today). When it fires, the AC state becomes on with its saved mode, temperature and fan.
-4. **Reboot rescheduling** (`timer/BootReceiver.kt`). Set a timer, reboot, then check `adb shell dumpsys alarm | grep -A3 com.ijad.breeze`. Timers whose time passed during the reboot should be dropped.
-5. **Second AC and room switching.** Pair a second AC through Settings → Add AC. Change its mode and temperature, switch rooms from the Remote's name dropdown, and check that each AC restores its own state. Kill and relaunch the app: it should open straight on the Remote with no Welcome flash.
-6. **Rename dialog** (Settings → pencil). The new name should show in Settings and on the Remote header.
-7. **Hints.** With Eco tips on, Cool below 22° shows the green tip. With Temperature alerts on, ≤17° or ≥29° shows the red warning. Both auto-dismiss after about 4.5 s.
-8. **Remaining dark-mode screens versus PNGs:** Heat dark (`11b-remote-heat-dark.png`), Settings scrolled (`05d`), Timer, Brand, Find code, Welcome.
-9. **Reduced motion.** Set Developer options → animator duration scale to "Animation off", then relaunch. Screen transitions, the welcome rings, the fan spin and the find-code pulse should all be static.
-10. **Predictive back** (Android 14+ gesture). Swipe back slowly from Settings. The clip-reveal (`screen()` in `NavGraph.kt`) should track the gesture without glitches.
-11. **Small screens.** On a short device (for example 360×640 dp), the Remote's upper area scrolls and the Presets sheet stays pinned. Check that nothing overlaps.
+1. **Welcome screen in dark mode, and its rings under reduced motion.** It's only reachable with no paired ACs (or after clearing app data).
+2. **Find code pulse under reduced motion** (animator duration scale 0). The Remote, transitions and fan icon were confirmed static.
+3. **Missed timer dropped after reboot** (`BootReceiver`'s `else repo.removeTimer`). The reboot test only covered the reschedule path, because the reboot finished before any timer was due.
+4. **New launcher icon on other launchers** (Samsung One UI squircle, themed icons on Android 13+).
+5. **Real IR on an LG unit**, still never tried on hardware with an IR blaster.
+
+### Verified on 2026-10-09
+
+- Preset highlight survives Remote → Timer → back.
+- Live power sync: "Turn off in 00:05" fired with the Remote open. The UI greyed out in place, the timer row cleared and the notification was posted.
+- "Turn on at": the summary says "tomorrow" for a time that has passed. At 09:15 the AC came on with its saved mode, temperature and fan.
+- Reboot: a real reboot rescheduled the pending exact alarm about 20 s after boot.
+- Second AC (Office) paired through Settings → Add AC. Each AC keeps its own state across room switches, and the stored JSON matches. Kill and relaunch opens on the active AC.
+- Rename shows in Settings and on the Remote header.
+- Hints: Eco tip below 22° in Cool, red warning at 17°. Both clear after about 4.5 s.
+- Dark mode versus PNGs: Heat (`11b`) and Settings (`05c`, `05d`) match. Brand, Timer and Find code look right (there are no dark PNGs for them).
+- Reduced motion: screen transitions are instant and the fan icon is static.
+- Predictive back: the clip-reveal follows a slow drag, cancel restores the screen, and commit pops. Push and back-key transitions are unchanged.
+- Small screen (945×1680 px, 360×640 dp): the Remote's upper area scrolls with the Presets sheet pinned, preset chips scroll sideways, and the Timer screen fits.
+
+### Fixed on 2026-10-09
+
+- **Cold-start flash.** The Remote drew its "no AC" empty state for a frame before DataStore loaded, because `devices` started as `emptyList()`. `NavGraph` now collects devices and the active id as one snapshot that starts as null, and draws the Remote only after it loads. This also prevents a wrong-room frame with several ACs.
+- **Predictive back didn't track the gesture.** The manifest was missing `android:enableOnBackInvokedCallback="true"`. Also, `screen()` only treated a screen as popping after the pop was committed. It now also counts "exiting while still on top" (an uncommitted predictive back).
+- **Launcher icon.** The manifest pointed at a plain layer-list, so the adaptive icon was never used. It now uses `@mipmap/ic_launcher`, a new design based on the Welcome emblem (Cool rings and the `mode_fan` disc on the dark surface with a Cool glow), plus a monochrome layer for themed icons.
 
 ## Open items and known limitations (not bugs)
 
 - **IR for non-LG brands is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs (Samsung, Daikin, …) would go in `ir/` next to `LgIrCodec`.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
 - **Timers are app-side.** The phone must be pointed at the AC when the alarm fires. Without the exact-alarm permission (denied by default on Android 14+), the Timer screen shows "Allow exact timing", and alarms otherwise run inexact.
+- **System splash ignores the in-app theme.** With the app set to Dark on a light system, the launch splash is light for a moment. `UiModeManager.setApplicationNightMode` (API 31+) could fix this.
 - **Slow debug cold start** (about 25 s observed, but on an overloaded host, so it isn't a reliable number). Consider a release build check and a baseline profile.
 - **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec` (frames, checksums, clamping), `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
 
