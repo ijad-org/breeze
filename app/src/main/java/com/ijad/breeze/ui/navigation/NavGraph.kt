@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -43,6 +44,7 @@ import com.ijad.breeze.ui.settings.SettingsScreen
 import com.ijad.breeze.ui.splash.SplashScreen
 import com.ijad.breeze.ui.theme.LocalReduceMotion
 import com.ijad.breeze.ui.timer.TimerScreen
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 object Routes {
@@ -74,8 +76,13 @@ fun BreezeNavHost(
     val context = LocalContext.current
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
-    val devices by repository.devices.collectAsStateWithLifecycle(initialValue = emptyList())
-    val activeId by repository.activeDeviceId.collectAsStateWithLifecycle(initialValue = null)
+    // One snapshot of devices + active id; null until DataStore first emits. Without it the Remote
+    // would flash its "no AC" state (and then the wrong room) on cold start.
+    val home by remember {
+        repository.devices.combine(repository.activeDeviceId) { list, id -> list to id }
+    }.collectAsStateWithLifecycle(initialValue = null)
+    val devices = home?.first.orEmpty()
+    val activeId = home?.second
     val timers by repository.timers.collectAsStateWithLifecycle(initialValue = emptyList())
     val tempAlerts by repository.tempAlerts.collectAsStateWithLifecycle(initialValue = true)
     val timerReminders by repository.timerReminders.collectAsStateWithLifecycle(initialValue = true)
@@ -140,7 +147,7 @@ fun BreezeNavHost(
             )
         }
         screen(Routes.Remote, navController, reduceMotion) {
-            RemoteScreen(
+            if (home != null) RemoteScreen(
                 devices = devices,
                 activeDevice = activeDevice,
                 timer = activeTimer,
@@ -217,9 +224,11 @@ private fun NavGraphBuilder.screen(
 ) {
     composable(route, arguments = arguments) { entry ->
         val backStack by navController.currentBackStack.collectAsState()
+        // Exiting while still on top = predictive back in progress (the pop isn't committed yet);
+        // gone from the stack = a committed pop. A forward push has the new entry on top instead.
         val popping = !reduceMotion &&
             transition.targetState == EnterExitState.PostExit &&
-            backStack.none { it.id == entry.id }
+            (backStack.lastOrNull()?.id == entry.id || backStack.none { it.id == entry.id })
         val reveal by transition.animateFloat(
             transitionSpec = { tween(PushMillis, easing = PushEasing) },
             label = "popReveal"
