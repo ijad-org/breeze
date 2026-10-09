@@ -26,6 +26,7 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 2. **Real IR on an LG unit**, still never tried on hardware with an IR blaster.
 3. **Real IR on a Samsung unit.** `SamsungIrCodec` matches IRremoteESP8266's reference on/off frames in unit tests, but hasn't been tried on hardware. It always sends the 21-byte extended form, which carries power and settings together. If a unit ignores repeated extended frames while already on, send the 14-byte normal form when power hasn't changed.
 4. **Real IR on a Carrier unit.** `CarrierIrCodec` matches IRremoteESP8266's CARRIER_AC64 known states and a real capture in unit tests, but has not been tried on hardware. Many Carrier units (especially Midea-built ones) use a different protocol, so a unit that ignores all 5 probes is probably not AC64.
+5. **Real IR on a Daikin unit.** Neither protocol has been tried on hardware. The ARC433B69 encoder reproduces a real remote capture byte for byte (IRremoteESP8266 issue #689). The 280-bit frames are checked against that library's timings and reset state, not against a capture.
 
 ### Verified on 2026-10-09
 
@@ -56,13 +57,14 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 ## Open items and known limitations (not bugs)
 
-- **IR for brands other than LG, Samsung and Carrier is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs (Daikin, …) would go in `ir/` next to `LgIrCodec`, `SamsungIrCodec` and `CarrierIrCodec`, plus a branch in `BrandIr`.
+- **IR for brands other than LG, Samsung, Carrier and Daikin is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs would go in `ir/` next to the existing `*IrCodec` files, plus a branch in `BrandIr`.
 - **Carrier has no Dry or Auto.** CARRIER_AC64 only encodes Heat, Cool and Fan. Dry and Auto are sent as Cool while the UI still shows the chosen mode.
+- **Daikin covers two of its protocols.** Only the 280-bit and 216-bit protocols are covered. Others such as Daikin2 (ARC477A1), 160, 176, 152, 128 and 64 aren't. A Daikin AC that was paired before this change has a placeholder code index, so it falls back to the 280-bit protocol. Re-pairing picks the right one.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
 - **Timers are app-side.** The phone must be pointed at the AC when the alarm fires. Without the exact-alarm permission (denied by default on Android 14+), the Timer screen shows "Allow exact timing", and alarms otherwise run inexact.
 - **System splash on Android 8–11** still follows the system theme, because `setApplicationNightMode` only exists on API 31+.
 - **Slow debug cold start** (about 25 s observed, but on an overloaded host, so it isn't a reliable number). Consider a release build check and a baseline profile.
-- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec`, `SamsungIrCodec` and `CarrierIrCodec` (frames, checksums, clamping), `BrandIr` routing, `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
+- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec`, `SamsungIrCodec`, `CarrierIrCodec` and `DaikinIrCodec` (frames, checksums, clamping, real captures), `BrandIr` routing, `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
 
 ## Environment notes
 

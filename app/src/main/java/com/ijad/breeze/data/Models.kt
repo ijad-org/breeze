@@ -62,7 +62,7 @@ object Brands {
     val all: List<AcBrand> = listOf(
         AcBrand("samsung", "Samsung", 'S', 12),
         AcBrand("lg", "LG", 'L', 5),
-        AcBrand("daikin", "Daikin", 'D', 12),
+        AcBrand("daikin", "Daikin", 'D', 4),
         AcBrand("mitsubishi", "Mitsubishi", 'M', 12),
         AcBrand("voltas", "Voltas", 'V', 10),
         AcBrand("bluestar", "Blue Star", 'B', 10),

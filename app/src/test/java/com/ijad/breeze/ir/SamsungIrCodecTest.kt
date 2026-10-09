@@ -2,6 +2,7 @@ package com.ijad.breeze.ir
 
 import com.ijad.breeze.data.AcMode
 import com.ijad.breeze.data.FanSpeed
+import com.ijad.breeze.data.RemoteState
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -126,12 +127,12 @@ class SamsungIrCodecTest {
 
     @Test
     fun brandIr_routesSamsung() {
-        val control = BrandIr.controlPattern("samsung", true, AcMode.Cool, 24, FanSpeed.Auto, false)!!
+        val control = BrandIr.controlPattern("samsung", 0, RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, false))!!
         assertEquals(38_000, control.frequencyHz)
         assertArrayEquals(state(true, AcMode.Cool, 24, FanSpeed.Auto, false), decode(control.micros))
-        val swing = BrandIr.swingPattern("samsung", true, AcMode.Cool, 24, FanSpeed.Auto, true)!!
+        val swing = BrandIr.swingPattern("samsung", 0, RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, true))!!
         assertArrayEquals(state(true, AcMode.Cool, 24, FanSpeed.Auto, true), decode(swing.micros))
         assertEquals(5, BrandIr.probeCount("samsung", 12))
-        assertEquals(12, BrandIr.probeCount("daikin", 12))
+        assertEquals(12, BrandIr.probeCount("haier", 12))
     }
 }

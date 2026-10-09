@@ -1,55 +1,51 @@
 package com.ijad.breeze.ir
 
-import com.ijad.breeze.data.AcMode
-import com.ijad.breeze.data.FanSpeed
+import com.ijad.breeze.data.RemoteState
 
 /**
  * Resolves IR patterns per brand. LG uses classic 28-bit @ 38 kHz, Samsung its
- * 21-byte extended state @ 38 kHz, Carrier 64-bit full state @ 38 kHz; other
- * brands return null so the UI can toast "codes coming".
+ * 21-byte extended state @ 38 kHz, Carrier 64-bit full state @ 38 kHz, Daikin
+ * full-state frames with the protocol picked by the paired code
+ * ([DaikinIrCodec.protocolFor]); other brands return null so the UI can toast
+ * "codes coming".
  */
 object BrandIr {
     data class Pattern(val frequencyHz: Int, val micros: IntArray)
 
-    fun controlPattern(
-        brandId: String,
-        poweredOn: Boolean,
-        mode: AcMode,
-        temperatureC: Int,
-        fan: FanSpeed,
-        swingOn: Boolean
-    ): Pattern? = when (brandId) {
+    fun controlPattern(brandId: String, configIndex: Int, state: RemoteState): Pattern? = when (brandId) {
         "lg" -> Pattern(
             LgIrCodec.FREQUENCY_HZ,
-            LgIrCodec.patternFor(poweredOn, mode, temperatureC, fan)
+            LgIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan)
         )
         "samsung" -> Pattern(
             SamsungIrCodec.FREQUENCY_HZ,
-            SamsungIrCodec.patternFor(poweredOn, mode, temperatureC, fan, swingOn)
+            SamsungIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn)
         )
         "carrier" -> Pattern(
             CarrierIrCodec.FREQUENCY_HZ,
-            CarrierIrCodec.patternFor(poweredOn, mode, temperatureC, fan, swingOn)
+            CarrierIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn)
         )
+        "daikin" -> daikinPattern(configIndex, state)
         else -> null
     }
 
     /**
-     * LG has a stateless swing command. Samsung and Carrier keep swing in their
-     * state, so the whole state is resent with the new swing setting.
+     * [state] already carries the new swing setting. LG has a stateless swing command.
+     * Samsung, Carrier and Daikin keep swing in their state, so the whole state is resent.
      */
-    fun swingPattern(
-        brandId: String,
-        poweredOn: Boolean,
-        mode: AcMode,
-        temperatureC: Int,
-        fan: FanSpeed,
-        swingOn: Boolean
-    ): Pattern? = when (brandId) {
+    fun swingPattern(brandId: String, configIndex: Int, state: RemoteState): Pattern? = when (brandId) {
         "lg" -> Pattern(LgIrCodec.FREQUENCY_HZ, LgIrCodec.swingPattern())
-        "samsung", "carrier" -> controlPattern(brandId, poweredOn, mode, temperatureC, fan, swingOn)
+        "samsung", "carrier", "daikin" -> controlPattern(brandId, configIndex, state)
         else -> null
     }
+
+    private fun daikinPattern(configIndex: Int, state: RemoteState) = Pattern(
+        DaikinIrCodec.FREQUENCY_HZ,
+        DaikinIrCodec.patternFor(
+            DaikinIrCodec.protocolFor(configIndex),
+            state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn
+        )
+    )
 
     fun powerProbe(brandId: String, index: Int): Pattern? {
         val variants = probeVariants(brandId)
@@ -66,6 +62,7 @@ object BrandIr {
         "lg" -> LgIrCodec.powerProbeVariants().map { Pattern(LgIrCodec.FREQUENCY_HZ, it) }
         "samsung" -> SamsungIrCodec.powerProbeVariants().map { Pattern(SamsungIrCodec.FREQUENCY_HZ, it) }
         "carrier" -> CarrierIrCodec.powerProbeVariants().map { Pattern(CarrierIrCodec.FREQUENCY_HZ, it) }
+        "daikin" -> DaikinIrCodec.powerProbeVariants().map { Pattern(DaikinIrCodec.FREQUENCY_HZ, it) }
         else -> null
     }
 
