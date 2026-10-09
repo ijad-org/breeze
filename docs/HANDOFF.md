@@ -43,10 +43,11 @@ Do these in order. Each needs a running device; see "Environment" below first.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
 - **Timers are app-side.** The phone must be pointed at the AC when the alarm fires. Without the exact-alarm permission (denied by default on Android 14+), the Timer screen shows "Allow exact timing", and alarms otherwise run inexact.
 - **Slow debug cold start** (about 25 s observed, but on an overloaded host, so it isn't a reliable number). Consider a release build check and a baseline profile.
-- **No automated tests.** Candidates: JVM unit tests for `TimerScheduler.afterDuration` / `nextTimeOfDay`, `AppRepository` JSON round-trip (including old device JSON without `state`), and `LgIrCodec` checksums. Optionally add Roborazzi screenshot tests to compare against `docs/design/*.png` without an emulator.
+- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec` (frames, checksums, clamping), `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
 
 ## Environment notes
 
-- Build with JDK 17: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`. Gradle 8.9 can't run on Android Studio's bundled JDK 25. If the Kotlin daemon dies, add `-Pkotlin.compiler.execution.strategy=in-process`.
+- Linux/cloud containers: install the SDK with `cmdline-tools` (`platforms;android-35`, `build-tools;34.0.0`) and set `sdk.dir` in `local.properties`. JDK 21 also builds there.
+- Build with JDK 17 on the Mac: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`. Gradle 8.9 can't run on Android Studio's bundled JDK 25. If the Kotlin daemon dies, add `-Pkotlin.compiler.execution.strategy=in-process`.
 - **emulator-5554 (`medium_phone`) is shared with other agents.** Ask before using it, always pass `-s emulator-5554`, and never run `adb kill-server`. There is a second AVD (`Medium_Phone_API_37.0`), but the host has 8 GB of RAM and swap was nearly full, so running two emulators at once is not viable.
 - The emulator currently has Breeze installed, the theme set to Dark, and exact alarms allowed for Breeze via appops. Restart the emulator if it shows "System UI / Process system isn't responding".
