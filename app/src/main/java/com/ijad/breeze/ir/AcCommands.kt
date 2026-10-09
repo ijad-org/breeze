@@ -15,14 +15,17 @@ object AcCommands {
     fun sendState(ir: IrTransmitter, device: AcDevice, state: RemoteState): Result {
         if (!ir.hasIrEmitter) return Result.NoEmitter
         val pattern = BrandIr.controlPattern(
-            device.brandId, state.poweredOn, state.mode, state.temperatureC, state.fan
+            device.brandId, state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn
         ) ?: return Result.Unsupported(device.brandName)
         return ir.transmit(pattern.frequencyHz, pattern.micros).toResult()
     }
 
-    fun sendSwing(ir: IrTransmitter, device: AcDevice): Result {
+    /** [state] already holds the new swing setting. */
+    fun sendSwing(ir: IrTransmitter, device: AcDevice, state: RemoteState): Result {
         if (!ir.hasIrEmitter) return Result.NoEmitter
-        val pattern = BrandIr.swingPattern(device.brandId) ?: return Result.Unsupported(device.brandName)
+        val pattern = BrandIr.swingPattern(
+            device.brandId, state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn
+        ) ?: return Result.Unsupported(device.brandName)
         return ir.transmit(pattern.frequencyHz, pattern.micros).toResult()
     }
 

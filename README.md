@@ -16,7 +16,7 @@ The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and 
 |------|--------|
 | Welcome | Expanding rings + spinning fan, matching the prototype animations |
 | Brand select + search | Working (10 brands) |
-| Find-your-code pairing | Pulsing power probe, prev/next codes, then a "Name this AC" sheet. LG sends real classic 28-bit probes |
+| Find-your-code pairing | Pulsing power probe, prev/next codes, then a "Name this AC" sheet. LG and Samsung send real probes |
 | Remote | Mode-tinted dial and background, Cool/Heat/Dry/Fan/Auto, 4-step fan (Low/Mid/High/Auto), swing, greyed power-off state, per-AC state saved |
 | Presets | Sleep (+1°, low fan), Eco (Cool 26°, auto fan), Turbo (Cool 18°, high fan) |
 | Timer | "Turn off in" / "Turn on at" via AlarmManager. Sends IR when it fires (phone must face the AC), optional reminder notification, survives reboot |
@@ -29,6 +29,7 @@ The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and 
 
 - Android **ConsumerIrManager** (`TRANSMIT_IR`, feature optional)
 - **LG**: classic 28-bit frames @ 38 kHz via `LgIrCodec` (adapted from AC Remote Easy)
+- **Samsung**: 21-byte extended frames @ 38 kHz via `SamsungIrCodec` (protocol from IRremoteESP8266 `ir_Samsung`)
 - **Other brands**: placeholder chirps / Toast *"codes coming"* for v1
 - Empty banner when `hasIrEmitter()` is false
 
