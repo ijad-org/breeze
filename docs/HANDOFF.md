@@ -24,6 +24,7 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 1. **New launcher icon on Samsung One UI.** Themed icons are verified on Pixel Launcher (below). The outer ring ends at r≈32.6dp, inside the 33dp safe zone, so a squircle mask shouldn't clip it, but this hasn't been seen on a Samsung launcher.
 2. **Real IR on an LG unit**, still never tried on hardware with an IR blaster.
+3. **Real IR on a Carrier unit.** `CarrierIrCodec` matches IRremoteESP8266's CARRIER_AC64 known states and a real capture in unit tests, but has not been tried on hardware. Many Carrier units (especially Midea-built ones) use a different protocol, so a unit that ignores all 5 probes is probably not AC64.
 
 ### Verified on 2026-10-09
 
@@ -54,12 +55,13 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 ## Open items and known limitations (not bugs)
 
-- **IR for non-LG brands is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs (Samsung, Daikin, …) would go in `ir/` next to `LgIrCodec`.
+- **IR for brands other than LG and Carrier is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs (Samsung, Daikin, …) would go in `ir/` next to `LgIrCodec` and `CarrierIrCodec`, plus a branch in `BrandIr`.
+- **Carrier has no Dry or Auto.** CARRIER_AC64 only encodes Heat, Cool and Fan. Dry and Auto are sent as Cool while the UI still shows the chosen mode.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
 - **Timers are app-side.** The phone must be pointed at the AC when the alarm fires. Without the exact-alarm permission (denied by default on Android 14+), the Timer screen shows "Allow exact timing", and alarms otherwise run inexact.
 - **System splash on Android 8–11** still follows the system theme, because `setApplicationNightMode` only exists on API 31+.
 - **Slow debug cold start** (about 25 s observed, but on an overloaded host, so it isn't a reliable number). Consider a release build check and a baseline profile.
-- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec` (frames, checksums, clamping), `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
+- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec` and `CarrierIrCodec` (frames, checksums, clamping), `BrandIr` routing, `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
 
 ## Environment notes
 

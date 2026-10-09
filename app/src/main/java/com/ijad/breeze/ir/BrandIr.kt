@@ -1,47 +1,51 @@
 package com.ijad.breeze.ir
 
-import com.ijad.breeze.data.AcMode
-import com.ijad.breeze.data.FanSpeed
+import com.ijad.breeze.data.RemoteState
 
 /**
- * Resolves IR patterns per brand. LG uses classic 28-bit @ 38 kHz;
- * other brands return null so the UI can toast "codes coming".
+ * Resolves IR patterns per brand. LG uses classic 28-bit and Carrier uses
+ * 64-bit full-state frames, both @ 38 kHz; other brands return null so the
+ * UI can toast "codes coming".
  */
 object BrandIr {
     data class Pattern(val frequencyHz: Int, val micros: IntArray)
 
-    fun controlPattern(
-        brandId: String,
-        poweredOn: Boolean,
-        mode: AcMode,
-        temperatureC: Int,
-        fan: FanSpeed
-    ): Pattern? {
-        if (brandId != "lg") return null
-        return Pattern(
+    fun controlPattern(brandId: String, state: RemoteState): Pattern? = when (brandId) {
+        "lg" -> Pattern(
             LgIrCodec.FREQUENCY_HZ,
-            LgIrCodec.patternFor(poweredOn, mode, temperatureC, fan)
+            LgIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan)
         )
+        "carrier" -> Pattern(
+            CarrierIrCodec.FREQUENCY_HZ,
+            CarrierIrCodec.patternFor(
+                state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn
+            )
+        )
+        else -> null
     }
 
-    fun swingPattern(brandId: String): Pattern? {
-        if (brandId != "lg") return null
-        return Pattern(LgIrCodec.FREQUENCY_HZ, LgIrCodec.swingPattern())
+    /** [state] already holds the new swing value; LG toggles with a fixed frame, Carrier resends the state. */
+    fun swingPattern(brandId: String, state: RemoteState): Pattern? = when (brandId) {
+        "lg" -> Pattern(LgIrCodec.FREQUENCY_HZ, LgIrCodec.swingPattern())
+        "carrier" -> controlPattern(brandId, state)
+        else -> null
     }
 
     fun powerProbe(brandId: String, index: Int): Pattern? {
-        if (brandId == "lg") {
-            val variants = LgIrCodec.powerProbeVariants()
-            val i = index.coerceIn(0, variants.lastIndex)
-            return Pattern(LgIrCodec.FREQUENCY_HZ, variants[i])
-        }
-        // Placeholder NEC-like chirp so pairing UX still "sends" something
-        // on IR hardware while real codes are pending.
-        return placeholderChirp(index)
+        val (frequencyHz, variants) = probeVariants(brandId)
+            // Placeholder NEC-like chirp so pairing UX still "sends" something
+            // on IR hardware while real codes are pending.
+            ?: return placeholderChirp(index)
+        return Pattern(frequencyHz, variants[index.coerceIn(0, variants.lastIndex)])
     }
 
-    fun probeCount(brandId: String, fallback: Int): Int {
-        return if (brandId == "lg") LgIrCodec.powerProbeVariants().size else fallback
+    fun probeCount(brandId: String, fallback: Int): Int =
+        probeVariants(brandId)?.second?.size ?: fallback
+
+    private fun probeVariants(brandId: String): Pair<Int, List<IntArray>>? = when (brandId) {
+        "lg" -> LgIrCodec.FREQUENCY_HZ to LgIrCodec.powerProbeVariants()
+        "carrier" -> CarrierIrCodec.FREQUENCY_HZ to CarrierIrCodec.powerProbeVariants()
+        else -> null
     }
 
     private fun placeholderChirp(seed: Int): Pattern {

@@ -298,7 +298,7 @@ fun RemoteScreen(
                         val new = state.copy(swingOn = on)
                         state = new
                         onStateChange(activeDevice.id, new)
-                        report(AcCommands.sendSwing(irTransmitter, activeDevice))
+                        report(AcCommands.sendSwing(irTransmitter, activeDevice, new))
                     },
                     modifier = Modifier.weight(1f)
                 )
