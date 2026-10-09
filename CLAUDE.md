@@ -16,7 +16,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 - minSdk 26, target/compile 35, AGP 8.7, Kotlin 2.0, Compose BOM 2024.12.01. Versions are in `gradle/libs.versions.toml`.
 - Repositories go through aliyun mirrors (`settings.gradle.kts`). Avoid adding new dependencies unless needed.
-- JVM unit tests: `./gradlew testDebugUnitTest`. They cover `LgIrCodec` and `CarrierIrCodec` frames, `BrandIr` routing, `TimerScheduler` time math and `StoreJson` (device/timer JSON, including legacy JSON). UI still has to be verified on an emulator or device (see "Verifying UI" below).
+- JVM unit tests: `./gradlew testDebugUnitTest`. They cover `LgIrCodec`, `SamsungIrCodec` and `CarrierIrCodec` frames, `BrandIr` routing, `TimerScheduler` time math and `StoreJson` (device/timer JSON, including legacy JSON). UI still has to be verified on an emulator or device (see "Verifying UI" below).
 
 ## Layout
 
@@ -24,7 +24,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 app/src/main/java/com/ijad/breeze/
   MainActivity.kt          theme resolution + edge-to-edge system bar style
   data/                    Models (AcBrand, AcDevice, RemoteState, enums), AppRepository (DataStore), StoreJson (device/timer JSON)
-  ir/                      IrTransmitter (ConsumerIrManager), BrandIr (pattern lookup), LgIrCodec (real LG 28-bit), CarrierIrCodec (Carrier 64-bit)
+  ir/                      IrTransmitter (ConsumerIrManager), BrandIr (pattern lookup), LgIrCodec (real LG 28-bit), SamsungIrCodec (real Samsung 21-byte), CarrierIrCodec (Carrier 64-bit)
   timer/                   TimerScheduler (AlarmManager), TimerReceiver (fires IR + notification), BootReceiver
   ui/theme/                Breeze tokens: mode tints, surfaces, ink(alpha), Plus Jakarta Sans type
   ui/components/           Prototype primitives: GlassCard, RoundButton, BreezeToggle, FanSteps, AppBar, ModeChip…
@@ -62,9 +62,10 @@ State lives in `AppRepository`, which is DataStore Preferences. There is no DI, 
 ## IR status
 
 - **LG** sends real classic 28-bit frames at 38 kHz (`LgIrCodec`). Power, mode, temp, fan and swing work.
+- **Samsung** sends real 21-byte "extended" frames at 38 kHz (`SamsungIrCodec`, from IRremoteESP8266 `ir_Samsung`). Every frame is extended, so it sets power together with mode, temp, fan and swing. Swing is part of the state, so toggling it resends the whole state.
 - **Carrier** sends full-state CARRIER_AC64 frames at 38 kHz, LSB first (`CarrierIrCodec`, from IRremoteESP8266 `ir_Carrier`). Power, temp, fan and swing work. The protocol only has Heat, Cool and Fan, so Dry and Auto are sent as Cool. Swing is a state bit, so a swing toggle resends the whole state.
 - Other brands send a placeholder chirp during pairing, and control shows "Codes coming for X". Don't present these as working.
-- Presets (Sleep/Eco/Turbo) are combinations of mode, temp and fan, because the LG codec has no sleep or turbo bits.
+- Presets (Sleep/Eco/Turbo) are combinations of mode, temp and fan, because the codecs don't send sleep or turbo bits.
 - Timers are app-side alarms. The phone must still be pointed at the AC when the alarm fires.
 
 ## Conventions
