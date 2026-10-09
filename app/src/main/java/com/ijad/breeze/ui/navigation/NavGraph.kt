@@ -1,6 +1,7 @@
 package com.ijad.breeze.ui.navigation
 
 import android.widget.Toast
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -147,6 +148,7 @@ fun BreezeNavHost(
             )
         }
         screen(Routes.Remote, navController, reduceMotion) {
+            ReportDrawnWhen { home != null }
             if (home != null) RemoteScreen(
                 devices = devices,
                 activeDevice = activeDevice,

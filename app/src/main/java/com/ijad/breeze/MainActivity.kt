@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -51,6 +52,9 @@ class MainActivity : ComponentActivity() {
             val reduceMotion = remember {
                 Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
             }
+
+            // Fully drawn once the stored state is in and the first real screen can compose.
+            ReportDrawnWhen { themeMode != null && startOnRemote != null }
 
             val mode = themeMode ?: ThemeMode.System
             val dark = when (mode) {
