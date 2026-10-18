@@ -86,6 +86,7 @@ State lives in `AppRepository`, which is DataStore Preferences. There is no DI, 
 - Read colours from the theme helpers (`ink`, `LocalBreezeDark`, `ModeStyle`), not hard-coded hex values in screens.
 - Persist anything user-visible (devices, per-device remote state, settings, timer) through `AppRepository`. Device JSON must stay backward compatible, so use `opt*` with defaults.
 - Brand names are only for compatibility. Keep the "not affiliated" disclaimer (README, Terms screen).
+- Settings → About → Open-source licenses (`LicensesScreen`) lists everything in the release APK, with the full OFL, Apache 2.0 and MIT texts from `res/raw`. When a dependency with a new licence (or a new copyright holder) is added, add an entry. `./gradlew :app:dependencies --configuration releaseRuntimeClasspath` shows what ships.
 
 ## Verifying UI
 

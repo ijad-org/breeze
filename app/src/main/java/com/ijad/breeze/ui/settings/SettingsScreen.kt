@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Eco
+import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PrivacyTip
@@ -95,7 +96,8 @@ fun SettingsScreen(
     onTimerReminders: (Boolean) -> Unit,
     onEcoTips: (Boolean) -> Unit,
     onPrivacy: () -> Unit,
-    onTerms: () -> Unit
+    onTerms: () -> Unit,
+    onLicenses: () -> Unit
 ) {
     var renaming by remember { mutableStateOf<AcDevice?>(null) }
     var deleting by remember { mutableStateOf<AcDevice?>(null) }
@@ -162,6 +164,10 @@ fun SettingsScreen(
                 }
                 RowDivider()
                 SettingRow(Icons.Rounded.Gavel, "Terms of Service", onClick = onTerms) {
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = ink(0.3f), modifier = Modifier.size(18.dp))
+                }
+                RowDivider()
+                SettingRow(Icons.Rounded.Code, "Open-source licenses", onClick = onLicenses) {
                     Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = ink(0.3f), modifier = Modifier.size(18.dp))
                 }
             }

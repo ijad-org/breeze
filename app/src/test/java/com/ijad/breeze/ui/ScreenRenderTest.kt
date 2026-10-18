@@ -10,11 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ijad.breeze.data.AcDevice
 import com.ijad.breeze.data.AppRepository
 import com.ijad.breeze.data.Brands
 import com.ijad.breeze.ir.IrTransmitter
+import com.ijad.breeze.ui.legal.LicensesScreen
 import com.ijad.breeze.ui.pairing.PairingScreen
 import com.ijad.breeze.ui.remote.RemoteScreen
 import com.ijad.breeze.ui.splash.SplashScreen
@@ -119,6 +122,23 @@ class ScreenRenderTest {
         render(dark = true) { RemoteWithOldPairing() }
         compose.mainClock.advanceTimeBy(1_000)
         save("remote-new-code-dark")
+    }
+
+    @Test
+    fun licenses_light() {
+        render(dark = false) { LicensesScreen(onBack = {}) }
+        compose.mainClock.advanceTimeBy(1_000)
+        save("licenses-light")
+    }
+
+    /** The font's OFL text must ship with the app; opening its row shows the bundled file. */
+    @Test
+    fun licenses_fontLicenseOpens() {
+        render(dark = true) { LicensesScreen(onBack = {}) }
+        compose.onNodeWithText("Plus Jakarta Sans").performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("SIL OPEN FONT LICENSE Version 1.1", substring = true).assertExists()
+        save("licenses-ofl-open-dark")
     }
 
     /** From API 36, large screens ignore the portrait lock: content stays phone-width, centred. */
