@@ -65,6 +65,29 @@ class HaierIrCodecTest {
     }
 
     @Test
+    fun ac160_matchesRealCapture() {
+        // ir_Haier_test.cpp DecodeHaierAC160 RealExample (issue #1804): on, Cool 26°, fan low, swing auto, power button.
+        assertArrayEquals(
+            bytes(
+                0xA6, 0xAC, 0x00, 0x00, 0x40, 0x60, 0x00, 0x20, 0x00, 0x00,
+                0x00, 0x00, 0x05, 0x17, 0xB5, 0x00, 0x60, 0x00, 0x00, 0x15
+            ),
+            state(Protocol.Ac160, true, AcMode.Cool, 26, FanSpeed.Low, swing = true)
+        )
+    }
+
+    @Test
+    fun ac160_auxHeatingFollowsHeatMode() {
+        for (mode in AcMode.entries) for (fan in FanSpeed.entries) {
+            val s = state(Protocol.Ac160, true, mode, 22, fan)
+            assertEquals("$mode", if (mode == AcMode.Heat) 0xC0 else 0x40, s[4])
+            assertEquals("$mode $fan", if (fan == FanSpeed.Auto) 0 else listOf(3, 2, 1)[fan.ordinal], s[16] ushr 5)
+            assertEquals(HaierIrCodec.sum(s, 0, 13), s[13])
+            assertEquals(HaierIrCodec.sum(s, 14, 19), s[19])
+        }
+    }
+
+    @Test
     fun yrw02_checksumMatchesRealCaptures() {
         // ir_Haier_test.cpp DecodeHaierAC_YRW02 RealExample (issue #485) and RealStates.
         val captures = listOf(
@@ -126,7 +149,7 @@ class HaierIrCodecTest {
 
     @Test
     fun swingPress_namesTheSwingButton() {
-        for (p in listOf(Protocol.Yrw02, Protocol.Ac176)) {
+        for (p in listOf(Protocol.Yrw02, Protocol.Ac176, Protocol.Ac160)) {
             val s = swingState(p, true, swing = true)
             assertEquals(2, s[12])
             assertEquals(0xC, s[1] and 0xF)
@@ -149,7 +172,7 @@ class HaierIrCodecTest {
     @Test
     fun powerProbes_areOnThenOffPerProtocol() {
         val probes = HaierIrCodec.powerProbeVariants()
-        assertEquals(6, probes.size)
+        assertEquals(8, probes.size)
         Protocol.entries.forEachIndexed { i, p ->
             assertArrayEquals(HaierIrCodec.patternFor(p, true, AcMode.Cool, 24, FanSpeed.Auto, false), probes[i * 2])
             assertArrayEquals(HaierIrCodec.patternFor(p, false, AcMode.Cool, 24, FanSpeed.Auto, false), probes[i * 2 + 1])

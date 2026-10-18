@@ -4,10 +4,10 @@ import com.ijad.breeze.data.AcMode
 import com.ijad.breeze.data.FanSpeed
 
 /**
- * Haier AC IR encoder for its three common full-state protocols.
+ * Haier AC IR encoder for its four full-state protocols.
  *
  * Constants, byte layouts and reset states from crankyoldgit/IRremoteESP8266
- * `ir_Haier.{h,cpp}` (`HAIER_AC_YRW02`, `HAIER_AC176`, `HAIER_AC`), with the
+ * `ir_Haier.{h,cpp}` (`HAIER_AC_YRW02`, `HAIER_AC176`, `HAIER_AC`, `HAIER_AC160`), with the
  * settings the library's `IRac` sends (health, sleep, turbo, quiet and timers off).
  *
  * Bytes are sent MSB-first at 38 kHz after a double header. Every frame carries
@@ -25,7 +25,10 @@ object HaierIrCodec {
         Ac176,
 
         /** `HAIER_AC` 72-bit (HSU07-HEA03 remote). */
-        Hsu07
+        Hsu07,
+
+        /** `HAIER_AC160` 160-bit (KFR-26GW/83@UI-Ge); its auxiliary heater follows Heat mode. */
+        Ac160
     }
 
     private const val HDR = 3000
@@ -39,10 +42,14 @@ object HaierIrCodec {
 
     private const val YRW02_LENGTH = 14
     private const val AC176_LENGTH = 22
+    private const val AC160_LENGTH = 20
     private const val HSU07_LENGTH = 9
 
     private const val YRW02_MODEL_A = 0xA6
     private const val AC176_PREFIX = 0xB7
+    private const val AC160_PREFIX = 0xB5
+    /** Byte 4 bit 7: IRremoteESP8266 `IRHaierAC160::setMode()` turns it on only in Heat. */
+    private const val AC160_AUX_HEATING = 0x80
     private const val YRW02_SWING_V_OFF = 0x0
     private const val YRW02_SWING_V_AUTO = 0xC
     private const val YRW02_FAN_AUTO = 0b101
@@ -104,13 +111,18 @@ object HaierIrCodec {
     ): IntArray {
         val temp = temperatureC.coerceIn(MIN_TEMP, MAX_TEMP) - MIN_TEMP
         return when (protocol) {
-            Protocol.Yrw02, Protocol.Ac176 -> {
-                val length = if (protocol == Protocol.Yrw02) YRW02_LENGTH else AC176_LENGTH
+            Protocol.Yrw02, Protocol.Ac176, Protocol.Ac160 -> {
+                val length = when (protocol) {
+                    Protocol.Yrw02 -> YRW02_LENGTH
+                    Protocol.Ac176 -> AC176_LENGTH
+                    else -> AC160_LENGTH
+                }
                 val fanBits = yrw02FanBits(fan)
                 IntArray(length).also { s ->
                     s[0] = YRW02_MODEL_A
                     s[1] = (temp shl 4) or (if (swingOn) YRW02_SWING_V_AUTO else YRW02_SWING_V_OFF)
-                    s[4] = if (poweredOn) 0x40 else 0
+                    s[4] = (if (poweredOn) 0x40 else 0) or
+                        (if (protocol == Protocol.Ac160 && mode == AcMode.Heat) AC160_AUX_HEATING else 0)
                     s[5] = fanBits shl 5
                     s[7] = yrw02ModeBits(mode) shl 5
                     s[12] = if (swingPress) YRW02_BUTTON_SWING_V else YRW02_BUTTON_POWER
@@ -120,6 +132,12 @@ object HaierIrCodec {
                         // Fan2 repeats the fan speed, with 0 for Auto.
                         s[16] = (if (fan == FanSpeed.Auto) 0 else fanBits) shl 6
                         s[AC176_LENGTH - 1] = sum(s, YRW02_LENGTH, AC176_LENGTH - 1)
+                    }
+                    if (protocol == Protocol.Ac160) {
+                        s[14] = AC160_PREFIX
+                        // Fan2 (3 bits here) repeats the fan speed, with 0 for Auto.
+                        s[16] = (if (fan == FanSpeed.Auto) 0 else fanBits) shl 5
+                        s[AC160_LENGTH - 1] = sum(s, YRW02_LENGTH, AC160_LENGTH - 1)
                     }
                 }
             }

@@ -52,7 +52,7 @@ class TimerReceiver : BroadcastReceiver() {
 
         val turnOn = timer.action == TimerAction.TurnOn
         val newState = device.state.copy(poweredOn = turnOn)
-        val result = AcCommands.sendState(IrTransmitter(context), device, newState)
+        val result = AcCommands.sendState(IrTransmitter(context), device, device.state, newState)
         repo.updateDeviceState(device.id, newState)
 
         if (!repo.timerReminders.first()) return

@@ -127,7 +127,7 @@ class SamsungIrCodecTest {
 
     @Test
     fun brandIr_routesSamsung() {
-        val control = BrandIr.controlPattern("samsung", 0, RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, false))!!
+        val control = BrandIr.controlPattern("samsung", 0, RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, false), true)!!
         assertEquals(38_000, control.frequencyHz)
         assertArrayEquals(state(true, AcMode.Cool, 24, FanSpeed.Auto, false), decode(control.micros))
         val swing = BrandIr.swingPattern("samsung", 0, RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, true))!!

@@ -1,5 +1,6 @@
 package com.ijad.breeze.ui.navigation
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.animation.EnterExitState
@@ -225,6 +226,9 @@ private fun NavGraphBuilder.screen(
     content: @Composable (NavBackStackEntry) -> Unit
 ) {
     composable(route, arguments = arguments) { entry ->
+        // currentBackStack is public but flagged @RestrictTo(LIBRARY_GROUP). It's the only way to tell an
+        // uncommitted predictive back (still on the stack) from a committed pop; verified on API 36 (HANDOFF.md).
+        @SuppressLint("RestrictedApi")
         val backStack by navController.currentBackStack.collectAsState()
         // Exiting while still on top = predictive back in progress (the pop isn't committed yet);
         // gone from the stack = a committed pop. A forward push has the new entry on top instead.

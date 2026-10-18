@@ -34,8 +34,8 @@ The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and 
 - **Daikin**: full-state frames @ 38 kHz via `DaikinIrCodec`, in two protocols picked at pairing: 280-bit (ARC4xx remotes) and 216-bit (ARC433B69). Layouts follow IRremoteESP8266
 - **Mitsubishi**: 144-bit full-state frames @ 38 kHz via `MitsubishiIrCodec` (MITSUBISHI_AC, after IRremoteESP8266), sent twice per press like the real remote
 - **Voltas**: 80-bit full-state frames @ 38 kHz via `VoltasIrCodec` (VOLTAS 122LZF, after IRremoteESP8266). Auto is sent as Cool, and Dry always sends 24° with low fan
-- **Panasonic**: 216-bit full-state frames @ 36.7 kHz via `PanasonicIrCodec` (PANASONIC_AC, after IRremoteESP8266), with the remote model (DKE, NKE, JKE, LKE, RKR) picked at pairing. CKP remotes, which toggle power, aren't covered
-- **Haier**: full-state frames @ 38 kHz via `HaierIrCodec`, in three protocols picked at pairing: YR-W02 (112-bit), 176-bit (V9014557) and HSU07-HEA03 (72-bit). Layouts follow IRremoteESP8266
+- **Panasonic**: 216-bit full-state frames @ 36.7 kHz via `PanasonicIrCodec` (PANASONIC_AC, after IRremoteESP8266), with the remote model (DKE, NKE, JKE, LKE, RKR, CKP) picked at pairing, plus the separate 32-bit PANASONIC_AC32 protocol. CKP and AC32 toggle power, so the app sends the toggle only when its power state changes
+- **Haier**: full-state frames @ 38 kHz via `HaierIrCodec`, in four protocols picked at pairing: YR-W02 (112-bit), 176-bit (V9014557), HSU07-HEA03 (72-bit) and 160-bit (KFR-26GW). Layouts follow IRremoteESP8266
 - **Blue Star and Other**: there is no Blue Star codec (its protocol isn't documented), so pairing steps through every supported protocol variant above, one probe each, and keeps the one the AC responds to
 - Empty banner when `hasIrEmitter()` is false
 

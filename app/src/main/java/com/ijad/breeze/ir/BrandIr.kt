@@ -9,7 +9,8 @@ import com.ijad.breeze.data.RemoteState
  * 21-byte extended state @ 38 kHz, Carrier 64-bit full state @ 38 kHz,
  * Mitsubishi 144-bit full state @ 38 kHz, Voltas 80-bit full state @ 38 kHz.
  * Daikin, Panasonic and Haier have several protocols or remote models, picked
- * by the paired code (two probes, ON and OFF, per variant).
+ * by the paired code (two probes, ON and OFF, per variant). Panasonic CKP and
+ * AC32 toggle power, so control frames say whether power changed.
  *
  * Brands without a codec of their own ("Other", and Blue Star, whose protocol
  * isn't documented) step through every supported variant during pairing, one
@@ -18,44 +19,47 @@ import com.ijad.breeze.data.RemoteState
 object BrandIr {
     data class Pattern(val frequencyHz: Int, val micros: IntArray)
 
-    /** One protocol variant: its carrier, a full-state frame and a swing press. */
+    /**
+     * One protocol variant: its carrier, a full-state frame (given whether power changed,
+     * which only toggling protocols use) and a swing press (power unchanged).
+     */
     private class Codec(
         val frequencyHz: Int,
-        val control: (RemoteState) -> IntArray,
-        val swing: (RemoteState) -> IntArray = control
+        val control: (RemoteState, Boolean) -> IntArray,
+        val swing: (RemoteState) -> IntArray = { control(it, false) }
     )
 
     private val LG = Codec(
         LgIrCodec.FREQUENCY_HZ,
-        { LgIrCodec.patternFor(it.poweredOn, it.mode, it.temperatureC, it.fan) },
+        { s, _ -> LgIrCodec.patternFor(s.poweredOn, s.mode, s.temperatureC, s.fan) },
         // LG has a stateless swing command.
         { LgIrCodec.swingPattern() }
     )
-    private val SAMSUNG = Codec(SamsungIrCodec.FREQUENCY_HZ, {
-        SamsungIrCodec.patternFor(it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn)
+    private val SAMSUNG = Codec(SamsungIrCodec.FREQUENCY_HZ, { s, _ ->
+        SamsungIrCodec.patternFor(s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn)
     })
-    private val CARRIER = Codec(CarrierIrCodec.FREQUENCY_HZ, {
-        CarrierIrCodec.patternFor(it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn)
+    private val CARRIER = Codec(CarrierIrCodec.FREQUENCY_HZ, { s, _ ->
+        CarrierIrCodec.patternFor(s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn)
     })
-    private val MITSUBISHI = Codec(MitsubishiIrCodec.FREQUENCY_HZ, {
-        MitsubishiIrCodec.patternFor(it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn)
+    private val MITSUBISHI = Codec(MitsubishiIrCodec.FREQUENCY_HZ, { s, _ ->
+        MitsubishiIrCodec.patternFor(s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn)
     })
-    private val VOLTAS = Codec(VoltasIrCodec.FREQUENCY_HZ, {
-        VoltasIrCodec.patternFor(it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn)
-    })
-
-    private fun daikin(protocol: DaikinIrCodec.Protocol) = Codec(DaikinIrCodec.FREQUENCY_HZ, {
-        DaikinIrCodec.patternFor(protocol, it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn)
+    private val VOLTAS = Codec(VoltasIrCodec.FREQUENCY_HZ, { s, _ ->
+        VoltasIrCodec.patternFor(s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn)
     })
 
-    private fun panasonic(model: PanasonicIrCodec.Model) = Codec(PanasonicIrCodec.FREQUENCY_HZ, {
-        PanasonicIrCodec.patternFor(model, it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn)
+    private fun daikin(protocol: DaikinIrCodec.Protocol) = Codec(DaikinIrCodec.FREQUENCY_HZ, { s, _ ->
+        DaikinIrCodec.patternFor(protocol, s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn)
+    })
+
+    private fun panasonic(model: PanasonicIrCodec.Model) = Codec(PanasonicIrCodec.FREQUENCY_HZ, { s, powerChanged ->
+        PanasonicIrCodec.patternFor(model, s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn, powerChanged)
     })
 
     private fun haier(protocol: HaierIrCodec.Protocol) = Codec(
         HaierIrCodec.FREQUENCY_HZ,
-        { HaierIrCodec.patternFor(protocol, it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn) },
-        { HaierIrCodec.swingPatternFor(protocol, it.poweredOn, it.mode, it.temperatureC, it.fan, it.swingOn) }
+        { s, _ -> HaierIrCodec.patternFor(protocol, s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn) },
+        { s -> HaierIrCodec.swingPatternFor(protocol, s.poweredOn, s.mode, s.temperatureC, s.fan, s.swingOn) }
     )
 
     /**
@@ -77,7 +81,10 @@ object BrandIr {
         panasonic(PanasonicIrCodec.Model.Nke),
         panasonic(PanasonicIrCodec.Model.Jke),
         panasonic(PanasonicIrCodec.Model.Lke),
-        panasonic(PanasonicIrCodec.Model.Rkr)
+        panasonic(PanasonicIrCodec.Model.Rkr),
+        haier(HaierIrCodec.Protocol.Ac160),
+        panasonic(PanasonicIrCodec.Model.Ckp),
+        panasonic(PanasonicIrCodec.Model.Ac32)
     )
 
     /** Sweep probe: Cool 24° Auto ON, the same first probe the brand codecs use. */
@@ -97,8 +104,12 @@ object BrandIr {
         else -> null
     }
 
-    fun controlPattern(brandId: String, configIndex: Int, state: RemoteState): Pattern? =
-        codecFor(brandId, configIndex)?.let { Pattern(it.frequencyHz, it.control(state)) }
+    /**
+     * [powerChanged]: whether `state.poweredOn` differs from the AC's last known power. Protocols
+     * that toggle power (Panasonic CKP and AC32) send the toggle only then; the rest ignore it.
+     */
+    fun controlPattern(brandId: String, configIndex: Int, state: RemoteState, powerChanged: Boolean): Pattern? =
+        codecFor(brandId, configIndex)?.let { Pattern(it.frequencyHz, it.control(state, powerChanged)) }
 
     /**
      * [state] already carries the new swing setting. LG sends its swing command; the other
@@ -123,7 +134,8 @@ object BrandIr {
         "voltas" -> VoltasIrCodec.powerProbeVariants().map { Pattern(VoltasIrCodec.FREQUENCY_HZ, it) }
         "panasonic" -> PanasonicIrCodec.powerProbeVariants().map { Pattern(PanasonicIrCodec.FREQUENCY_HZ, it) }
         "haier" -> HaierIrCodec.powerProbeVariants().map { Pattern(HaierIrCodec.FREQUENCY_HZ, it) }
-        "other", "bluestar" -> SWEEP.map { Pattern(it.frequencyHz, it.control(SWEEP_PROBE_STATE)) }
+        // A power toggle for the toggling protocols, so the probe turns an off AC on.
+        "other", "bluestar" -> SWEEP.map { Pattern(it.frequencyHz, it.control(SWEEP_PROBE_STATE, true)) }
         else -> null
     }
 }

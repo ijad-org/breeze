@@ -37,8 +37,12 @@ class PanasonicIrCodecTest {
         return decodeSection(pattern, 0, 8) + decodeSection(pattern, section1 + 1, 19)
     }
 
-    private fun state(model: Model, on: Boolean, mode: AcMode, temp: Int, fan: FanSpeed, swing: Boolean = false) =
-        decode(PanasonicIrCodec.patternFor(model, on, mode, temp, fan, swing))
+    private fun state(
+        model: Model, on: Boolean, mode: AcMode, temp: Int, fan: FanSpeed, swing: Boolean = false, powerChanged: Boolean = true
+    ) = decode(PanasonicIrCodec.patternFor(model, on, mode, temp, fan, swing, powerChanged))
+
+    /** The 27-byte models, i.e. everything but AC32. */
+    private val models216 = Model.entries - Model.Ac32
 
     @Test
     fun matchesRealJkeCapture() {
@@ -72,12 +76,13 @@ class PanasonicIrCodecTest {
 
     @Test
     fun fields_areEncodedForEveryState() {
-        for (model in Model.entries) for (on in listOf(true, false)) for (swing in listOf(true, false))
+        for (model in models216) for (on in listOf(true, false)) for (swing in listOf(true, false))
             for (mode in AcMode.entries) for (temp in 16..30) for (fan in FanSpeed.entries) {
                 val s = state(model, on, mode, temp, fan, swing)
                 val label = "$model $on $mode $temp $fan $swing"
                 assertEquals(label, PanasonicIrCodec.checksum(s), s[26])
-                assertEquals(label, if (on) 1 else 0, s[13] and 1)
+                // CKP's power bit is a toggle; powerChanged defaults to true here.
+                assertEquals(label, if (on || model == Model.Ckp) 1 else 0, s[13] and 1)
                 val expectedMode = when (mode) {
                     AcMode.Auto -> 0; AcMode.Dry -> 2; AcMode.Cool -> 3; AcMode.Heat -> 4; AcMode.Fan -> 6
                 }
@@ -119,14 +124,109 @@ class PanasonicIrCodecTest {
     @Test
     fun powerProbes_areOnThenOffPerModel() {
         val probes = PanasonicIrCodec.powerProbeVariants()
-        assertEquals(Model.entries.size * 2, probes.size)
+        assertEquals(14, probes.size)
         Model.entries.forEachIndexed { i, model ->
-            assertArrayEquals(PanasonicIrCodec.patternFor(model, true, AcMode.Cool, 24, FanSpeed.Auto, false), probes[i * 2])
-            assertArrayEquals(PanasonicIrCodec.patternFor(model, false, AcMode.Cool, 24, FanSpeed.Auto, false), probes[i * 2 + 1])
+            if (PanasonicIrCodec.togglesPower(model)) {
+                assertArrayEquals(PanasonicIrCodec.patternFor(model, true, AcMode.Cool, 24, FanSpeed.Auto, false, powerChanged = true), probes[i * 2])
+                assertArrayEquals(PanasonicIrCodec.patternFor(model, true, AcMode.Cool, 24, FanSpeed.Auto, false, powerChanged = false), probes[i * 2 + 1])
+            } else {
+                assertArrayEquals(PanasonicIrCodec.patternFor(model, true, AcMode.Cool, 24, FanSpeed.Auto, false), probes[i * 2])
+                assertArrayEquals(PanasonicIrCodec.patternFor(model, false, AcMode.Cool, 24, FanSpeed.Auto, false), probes[i * 2 + 1])
+            }
             assertEquals(model, PanasonicIrCodec.modelFor(i * 2))
             assertEquals(model, PanasonicIrCodec.modelFor(i * 2 + 1))
         }
         assertEquals(Model.Dke, PanasonicIrCodec.modelFor(-1))
-        assertEquals(Model.Dke, PanasonicIrCodec.modelFor(10))
+        assertEquals(Model.Dke, PanasonicIrCodec.modelFor(14))
+    }
+
+    @Test
+    fun ckp_powerBitIsAToggle() {
+        // The power bit is set only when power changes, whichever way.
+        assertEquals(1, state(Model.Ckp, true, AcMode.Cool, 24, FanSpeed.Auto, powerChanged = true)[13] and 1)
+        assertEquals(1, state(Model.Ckp, false, AcMode.Cool, 24, FanSpeed.Auto, powerChanged = true)[13] and 1)
+        assertEquals(0, state(Model.Ckp, true, AcMode.Cool, 24, FanSpeed.Auto, powerChanged = false)[13] and 1)
+        // Non-toggling models ignore powerChanged.
+        assertArrayEquals(
+            state(Model.Dke, true, AcMode.Cool, 24, FanSpeed.Auto, powerChanged = true),
+            state(Model.Dke, true, AcMode.Cool, 24, FanSpeed.Auto, powerChanged = false)
+        )
+    }
+
+    @Test
+    fun ckp_matchesRealCaptureSettings() {
+        // ir_Panasonic_test.cpp CkpModelSpecifics (issue #544): CKP, no toggle, Heat 23°, fan auto, vane auto, powerful on.
+        val capture = bytes(
+            0x02, 0x20, 0xE0, 0x04, 0x00, 0x00, 0x00, 0x06, 0x02,
+            0x20, 0xE0, 0x04, 0x00, 0x4E, 0x2E, 0x80, 0xAF, 0x00,
+            0x00, 0x0E, 0xE0, 0x11, 0x00, 0x01, 0x00, 0x06, 0xB7
+        )
+        assertEquals(0xB7, PanasonicIrCodec.checksum(capture))
+        val s = state(Model.Ckp, true, AcMode.Heat, 23, FanSpeed.Auto, swing = true, powerChanged = false)
+        // Mode, no toggle, temp, fan/vane, no horizontal vane and the model bytes match. That remote also had
+        // its timer flags set (13, 19, 20) and Powerful on (21 bit 0); the app leaves both off.
+        assertEquals(capture[13] and 0xF1, s[13])
+        for (i in listOf(14, 15, 16, 17, 23, 25)) assertEquals("byte $i", capture[i], s[i])
+        assertEquals(0x10, s[21])
+        assertEquals(PanasonicIrCodec.checksum(s), s[26])
+    }
+
+    /** Parses IRremoteESP8266's `outputStr()` format ("m3543s3450m920s828…") into a pattern. */
+    private fun timings(text: String): IntArray =
+        Regex("[ms](\\d+)").findAll(text).map { it.groupValues[1].toInt() }.toList().toIntArray()
+
+    @Test
+    fun ac32_senderMatchesLibrarySyntheticMessage() {
+        // ir_Panasonic_test.cpp DecodePanasonicAC32 SyntheticMessage: sendPanasonicAC32(0x0DF236FC).
+        val sectionA = "m3543s3450" +
+            "m920s828m920s2575m920s828m920s828m920s2575m920s2575m920s2575m920s2575" +
+            "m920s828m920s2575m920s828m920s828m920s2575m920s2575m920s2575m920s2575" +
+            "m920s2575m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828" +
+            "m920s2575m920s828m920s2575m920s2575m920s828m920s828m920s828m920s828"
+        val sectionB = "m3543s3450" +
+            "m920s828m920s828m920s2575m920s2575m920s2575m920s2575m920s2575m920s2575" +
+            "m920s828m920s828m920s2575m920s2575m920s2575m920s2575m920s2575m920s2575" +
+            "m920s828m920s2575m920s2575m920s828m920s2575m920s2575m920s828m920s828" +
+            "m920s828m920s2575m920s2575m920s828m920s2575m920s2575m920s828m920s828"
+        val footer = "m3543s3450m920s13946"
+        val expected = timings(sectionA + sectionA + footer + sectionB + sectionB + footer)
+        // The app's pattern ends on the last mark, without the trailing gap.
+        assertArrayEquals(expected.copyOf(expected.size - 1), PanasonicIrCodec.ac32Pattern(0x0DF236FCL))
+    }
+
+    @Test
+    fun ac32_matchesRealCaptureApartFromAutoModeValue() {
+        // ir_Panasonic_test.cpp DecodePanasonicAC32 RealMessage (issue #1307): 17°, auto mode, both swings auto,
+        // fan auto, no power toggle. The remote sent mode 5 for auto; the library (and the app) use 6.
+        val capture = 0x0DF236FCL
+        val s = PanasonicIrCodec.ac32StateFor(AcMode.Auto, 17, FanSpeed.Auto, swingOn = true, powerChanged = false)
+        assertEquals(capture and 0x00FFFFFFL, s and 0x00FFFFFFL)
+        assertEquals(0x0E, (s ushr 24).toInt())
+        // Known-good state (Cool 16°, auto fan, swings auto, no toggle).
+        assertEquals(0x0AF136FCL, PanasonicIrCodec.ac32StateFor(AcMode.Cool, 16, FanSpeed.Auto, true, false))
+    }
+
+    @Test
+    fun ac32_fieldsAreEncoded() {
+        for (mode in AcMode.entries) for (temp in 16..30) for (fan in FanSpeed.entries)
+            for (swing in listOf(true, false)) for (toggle in listOf(true, false)) {
+                val s = PanasonicIrCodec.ac32StateFor(mode, temp, fan, swing, toggle)
+                val label = "$mode $temp $fan $swing $toggle"
+                val b0 = (s and 0xFF).toInt()
+                assertEquals(label, 0x84, b0 and 0x87)
+                assertEquals(label, if (swing) 7 else 3, (b0 ushr 4) and 0x7)
+                assertEquals(label, if (swing) 1 else 0, (b0 ushr 3) and 1)
+                assertEquals(label, 0x36L, (s ushr 8) and 0xFF)
+                assertEquals(label, (temp - 15).toLong(), (s ushr 16) and 0xF)
+                assertEquals(label, listOf(3, 4, 5, 15)[fan.ordinal].toLong(), (s ushr 20) and 0xF)
+                assertEquals(label, listOf(2, 4, 3, 1, 6)[mode.ordinal].toLong(), (s ushr 24) and 0x7)
+                assertEquals(label, if (toggle) 0L else 1L, (s ushr 27) and 1)
+                assertEquals(label, 0L, s ushr 28)
+            }
+        // The pattern is the encoded state.
+        assertArrayEquals(
+            PanasonicIrCodec.ac32Pattern(PanasonicIrCodec.ac32StateFor(AcMode.Heat, 24, FanSpeed.Medium, false, true)),
+            PanasonicIrCodec.patternFor(Model.Ac32, true, AcMode.Heat, 24, FanSpeed.Medium, false, powerChanged = true)
+        )
     }
 }

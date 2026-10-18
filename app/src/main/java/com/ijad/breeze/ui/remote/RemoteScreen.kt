@@ -180,9 +180,10 @@ fun RemoteScreen(
 
     fun apply(new: RemoteState, clearPreset: Boolean = true) {
         if (clearPreset) preset = null
+        val previous = state
         state = new
         onStateChange(activeDevice.id, new)
-        report(AcCommands.sendState(irTransmitter, activeDevice, new))
+        report(AcCommands.sendState(irTransmitter, activeDevice, previous, new))
     }
 
     fun checkTemp(new: RemoteState) {
