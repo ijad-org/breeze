@@ -1,6 +1,6 @@
 # Breeze: handoff and pending work
 
-Last updated 2026-10-09. The design port and the missing features are done and pushed: `afafae5`, then `fc6b99c`.
+Last updated 2026-10-18. The design port and the missing features are done and pushed: `afafae5`, then `fc6b99c`. Mitsubishi and Voltas codecs were added on 2026-10-18.
 This file lists what is still **unverified or open**, so a fresh session can continue without the previous chat.
 Read `CLAUDE.md` first for build setup, layout and design tokens.
 
@@ -61,6 +61,7 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 - **IR for brands other than LG, Samsung, Carrier, Daikin, Mitsubishi and Voltas is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs would go in `ir/` next to the existing `*IrCodec` files, plus a branch in `BrandIr`.
 - **Carrier has no Dry or Auto.** CARRIER_AC64 only encodes Heat, Cool and Fan. Dry and Auto are sent as Cool while the UI still shows the chosen mode.
+- **Blue Star has no codec yet.** IRremoteESP8266 has only `sendBluestarHeavy`, a raw sender with a single example frame (13 bytes, remote D716LXM0535A2400313) and no documented fields. A full-state encoder needs captures from a real Blue Star remote, ideally several with one setting changed each.
 - **Voltas has no Auto mode, and Dry is fixed.** Auto is sent as Cool. In Dry the protocol forces 24° and low fan, so the AC ignores the temperature and fan shown in the UI.
 - **Daikin covers two of its protocols.** Only the 280-bit and 216-bit protocols are covered. Others such as Daikin2 (ARC477A1), 160, 176, 152, 128 and 64 aren't. A Daikin AC that was paired before this change has a placeholder code index, so it falls back to the 280-bit protocol. Re-pairing picks the right one.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
