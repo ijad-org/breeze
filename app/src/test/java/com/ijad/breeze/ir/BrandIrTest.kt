@@ -29,8 +29,8 @@ class BrandIrTest {
 
     @Test
     fun carrierProbes() {
-        assertEquals(5, BrandIr.probeCount("carrier"))
-        val last = BrandIr.powerProbe("carrier", 40)!!
+        assertEquals(7, BrandIr.probeCount("carrier"))
+        val last = BrandIr.powerProbe("carrier", 4)!!
         assertEquals(CarrierIrCodec.FREQUENCY_HZ, last.frequencyHz)
         assertArrayEquals(CarrierIrCodec.powerProbeVariants()[4], last.micros)
     }
@@ -96,22 +96,20 @@ class BrandIrTest {
     }
 
     @Test
-    fun otherAndBlueStar_sweepEverySupportedVariant() {
+    fun other_sweepsEverySupportedVariant() {
         val probeState = RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, false)
-        for (brand in listOf("other", "bluestar")) {
-            val count = BrandIr.probeCount(brand)
-            assertEquals(18, count)
-            // Each probe is the paired variant's own Cool 24° ON frame.
-            for (i in 0 until count) {
-                val probe = BrandIr.powerProbe(brand, i)!!
-                val control = BrandIr.controlPattern(brand, i, probeState, true)!!
-                assertEquals(control.frequencyHz, probe.frequencyHz)
-                assertArrayEquals(control.micros, probe.micros)
-            }
-            assertEquals(count, (0 until count).map { BrandIr.powerProbe(brand, it)!!.micros.toList() }.toSet().size)
+        val count = BrandIr.probeCount("other")
+        assertEquals(21, count)
+        // Each probe is the paired variant's own Cool 24° ON frame.
+        for (i in 0 until count) {
+            val probe = BrandIr.powerProbe("other", i)!!
+            val control = BrandIr.controlPattern("other", i, probeState, true)!!
+            assertEquals(control.frequencyHz, probe.frequencyHz)
+            assertArrayEquals(control.micros, probe.micros)
         }
+        assertEquals(count, (0 until count).map { BrandIr.powerProbe("other", it)!!.micros.toList() }.toSet().size)
         val state = RemoteState(true, AcMode.Heat, 21, FanSpeed.Medium, true)
-        // Stored indices must keep their variant: Samsung first, LG second, Panasonic DKE eighth.
+        // Stored indices must keep their variant: Samsung first, LG second, Panasonic DKE eighth, Coolix last.
         assertArrayEquals(
             SamsungIrCodec.patternFor(true, AcMode.Heat, 21, FanSpeed.Medium, true),
             BrandIr.controlPattern("other", 0, state, true)!!.micros
@@ -119,13 +117,50 @@ class BrandIrTest {
         assertArrayEquals(LgIrCodec.swingPattern(), BrandIr.swingPattern("other", 1, state)!!.micros)
         assertArrayEquals(
             PanasonicIrCodec.patternFor(PanasonicIrCodec.Model.Dke, true, AcMode.Heat, 21, FanSpeed.Medium, true),
-            BrandIr.controlPattern("bluestar", 7, state, true)!!.micros
+            BrandIr.controlPattern("other", 7, state, true)!!.micros
+        )
+        assertArrayEquals(
+            CoolixIrCodec.patternFor(true, AcMode.Heat, 21, FanSpeed.Medium),
+            BrandIr.controlPattern("other", 20, state, true)!!.micros
         )
         // Out-of-range codes fall back to the first variant.
         assertArrayEquals(
             BrandIr.controlPattern("other", 0, state, true)!!.micros,
             BrandIr.controlPattern("other", 99, state, true)!!.micros
         )
+    }
+
+    @Test
+    fun blueStar_usesGreeAndCoolix() {
+        assertEquals(6, BrandIr.probeCount("bluestar"))
+        val state = RemoteState(true, AcMode.Cool, 22, FanSpeed.High, true)
+        for ((index, variant) in listOf(0 to GreeIrCodec.Variant.BlueStar, 3 to GreeIrCodec.Variant.Yaw1f)) {
+            val expected = GreeIrCodec.patternFor(variant, true, AcMode.Cool, 22, FanSpeed.High, true)
+            assertArrayEquals(expected, BrandIr.controlPattern("bluestar", index, state, true)!!.micros)
+            assertArrayEquals(expected, BrandIr.swingPattern("bluestar", index, state)!!.micros)
+        }
+        assertArrayEquals(
+            CoolixIrCodec.patternFor(true, AcMode.Cool, 22, FanSpeed.High),
+            BrandIr.controlPattern("bluestar", 5, state, true)!!.micros
+        )
+        assertArrayEquals(CoolixIrCodec.swingPattern(), BrandIr.swingPattern("bluestar", 4, state)!!.micros)
+        assertArrayEquals(GreeIrCodec.powerProbeVariants(GreeIrCodec.Variant.BlueStar)[1], BrandIr.powerProbe("bluestar", 1)!!.micros)
+        assertArrayEquals(CoolixIrCodec.powerProbeVariants()[1], BrandIr.powerProbe("bluestar", 5)!!.micros)
+    }
+
+    @Test
+    fun carrier_laterCodesAreCoolix() {
+        assertEquals(7, BrandIr.probeCount("carrier"))
+        val state = RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, false)
+        assertArrayEquals(
+            CarrierIrCodec.patternFor(true, AcMode.Cool, 24, FanSpeed.Auto, false),
+            BrandIr.controlPattern("carrier", 4, state, true)!!.micros
+        )
+        assertArrayEquals(
+            CoolixIrCodec.patternFor(true, AcMode.Cool, 24, FanSpeed.Auto),
+            BrandIr.controlPattern("carrier", 5, state, true)!!.micros
+        )
+        assertArrayEquals(CoolixIrCodec.powerProbeVariants()[1], BrandIr.powerProbe("carrier", 6)!!.micros)
     }
 
     @Test
@@ -151,7 +186,7 @@ class BrandIrTest {
         )
         assertArrayEquals(
             HaierIrCodec.patternFor(HaierIrCodec.Protocol.Ac160, true, AcMode.Cool, 24, FanSpeed.Auto, false),
-            BrandIr.powerProbe("bluestar", 15)!!.micros
+            BrandIr.powerProbe("other", 15)!!.micros
         )
     }
 

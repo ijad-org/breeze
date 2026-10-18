@@ -41,6 +41,18 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests {
+            // Robolectric screen renders need the real fonts and resources.
+            isIncludeAndroidResources = true
+            all {
+                // ScreenRenderTest only runs with -Pbreeze.screenshots (it writes PNGs to build/screenshots).
+                it.systemProperty("breeze.screenshots", project.findProperty("breeze.screenshots") ?: "")
+                it.systemProperty("breeze.screenshotDir", layout.buildDirectory.dir("screenshots").get().asFile.path)
+            }
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -65,7 +77,11 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 }
