@@ -6,8 +6,9 @@ import com.ijad.breeze.data.RemoteState
  * Resolves IR patterns per brand. LG uses classic 28-bit @ 38 kHz, Samsung its
  * 21-byte extended state @ 38 kHz, Carrier 64-bit full state @ 38 kHz, Daikin
  * full-state frames with the protocol picked by the paired code
- * ([DaikinIrCodec.protocolFor]); other brands return null so the UI can toast
- * "codes coming".
+ * ([DaikinIrCodec.protocolFor]), Mitsubishi 144-bit full state @ 38 kHz,
+ * Voltas 80-bit full state @ 38 kHz; other
+ * brands return null so the UI can toast "codes coming".
  */
 object BrandIr {
     data class Pattern(val frequencyHz: Int, val micros: IntArray)
@@ -26,16 +27,24 @@ object BrandIr {
             CarrierIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn)
         )
         "daikin" -> daikinPattern(configIndex, state)
+        "mitsubishi" -> Pattern(
+            MitsubishiIrCodec.FREQUENCY_HZ,
+            MitsubishiIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn)
+        )
+        "voltas" -> Pattern(
+            VoltasIrCodec.FREQUENCY_HZ,
+            VoltasIrCodec.patternFor(state.poweredOn, state.mode, state.temperatureC, state.fan, state.swingOn)
+        )
         else -> null
     }
 
     /**
      * [state] already carries the new swing setting. LG has a stateless swing command.
-     * Samsung, Carrier and Daikin keep swing in their state, so the whole state is resent.
+     * Samsung, Carrier, Daikin, Mitsubishi and Voltas keep swing in their state, so the whole state is resent.
      */
     fun swingPattern(brandId: String, configIndex: Int, state: RemoteState): Pattern? = when (brandId) {
         "lg" -> Pattern(LgIrCodec.FREQUENCY_HZ, LgIrCodec.swingPattern())
-        "samsung", "carrier", "daikin" -> controlPattern(brandId, configIndex, state)
+        "samsung", "carrier", "daikin", "mitsubishi", "voltas" -> controlPattern(brandId, configIndex, state)
         else -> null
     }
 
@@ -63,6 +72,8 @@ object BrandIr {
         "samsung" -> SamsungIrCodec.powerProbeVariants().map { Pattern(SamsungIrCodec.FREQUENCY_HZ, it) }
         "carrier" -> CarrierIrCodec.powerProbeVariants().map { Pattern(CarrierIrCodec.FREQUENCY_HZ, it) }
         "daikin" -> DaikinIrCodec.powerProbeVariants().map { Pattern(DaikinIrCodec.FREQUENCY_HZ, it) }
+        "mitsubishi" -> MitsubishiIrCodec.powerProbeVariants().map { Pattern(MitsubishiIrCodec.FREQUENCY_HZ, it) }
+        "voltas" -> VoltasIrCodec.powerProbeVariants().map { Pattern(VoltasIrCodec.FREQUENCY_HZ, it) }
         else -> null
     }
 
