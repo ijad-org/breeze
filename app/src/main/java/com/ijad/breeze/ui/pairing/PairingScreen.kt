@@ -84,7 +84,11 @@ import kotlinx.coroutines.launch
 
 private val RoomSuggestions = listOf("Living Room", "Bedroom", "Office", "Kitchen")
 
-/** Find your code — docs/design/03-find-code.png */
+/**
+ * Find your code — docs/design/03-find-code.png
+ *
+ * With [repairing], the found code replaces that AC's code and there is no naming step.
+ */
 @Composable
 fun PairingScreen(
     brand: AcBrand,
@@ -92,7 +96,8 @@ fun PairingScreen(
     repository: AppRepository,
     irTransmitter: IrTransmitter,
     onBack: () -> Unit,
-    onPaired: (deviceId: String) -> Unit
+    onPaired: (deviceId: String) -> Unit,
+    repairing: AcDevice? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -110,6 +115,18 @@ fun PairingScreen(
         val pattern = BrandIr.powerProbe(brand.id, index) ?: return
         val result = irTransmitter.transmit(pattern.frequencyHz, pattern.micros)
         if (!result.success) Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+    }
+
+    fun confirm() {
+        val device = repairing
+        if (device == null) {
+            naming = true
+            return
+        }
+        scope.launch {
+            repository.updateDeviceCode(device.id, index)
+            onPaired(device.id)
+        }
     }
 
     fun advance() {
@@ -132,7 +149,7 @@ fun PairingScreen(
                 CircleIconButton(
                     Icons.Rounded.Check,
                     contentDescription = "Save this code",
-                    onClick = { naming = true },
+                    onClick = { confirm() },
                     background = tint.copy(alpha = 0.14f),
                     iconTint = tint
                 )
@@ -211,7 +228,7 @@ fun PairingScreen(
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 32.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            RoundButton("Yes, it worked", onClick = { naming = true }, tint = tint, fontSize = 14, modifier = Modifier.weight(1f))
+            RoundButton("Yes, it worked", onClick = { confirm() }, tint = tint, fontSize = 14, modifier = Modifier.weight(1f))
             RoundButton("Not yet", onClick = { advance() }, variant = ButtonVariant.Secondary, fontSize = 14, modifier = Modifier.weight(1f))
         }
     }

@@ -1,6 +1,8 @@
 package com.ijad.breeze.ir
 
+import com.ijad.breeze.data.AcDevice
 import com.ijad.breeze.data.AcMode
+import com.ijad.breeze.data.Brands
 import com.ijad.breeze.data.FanSpeed
 import com.ijad.breeze.data.RemoteState
 
@@ -155,6 +157,16 @@ object BrandIr {
         val variants = probeVariants(brandId) ?: return null
         return variants[index.coerceIn(0, variants.lastIndex)]
     }
+
+    /** Brands whose paired code picks one of several protocols (see [codecFor]). */
+    private val CODE_PICKS_PROTOCOL = setOf("carrier", "daikin", "panasonic", "haier", "bluestar", "other")
+
+    /**
+     * True when [device] was paired against an older code list and its code now picks a
+     * protocol that may never have been tried on it. Single-protocol brands ignore the code.
+     */
+    fun needsNewCode(device: AcDevice): Boolean =
+        device.codeListVersion < Brands.CODE_LIST_VERSION && device.brandId in CODE_PICKS_PROTOCOL
 
     fun probeCount(brandId: String): Int = probeVariants(brandId)?.size ?: 0
 

@@ -17,7 +17,8 @@ class StoreJsonTest {
                     temperatureC = 29,
                     fan = FanSpeed.Auto,
                     swingOn = false
-                )
+                ),
+                codeListVersion = 0
             )
         )
         assertEquals(devices, StoreJson.decodeDevices(StoreJson.encodeDevices(devices)))
@@ -26,8 +27,9 @@ class StoreJsonTest {
     @Test
     fun devices_legacyJsonWithoutStateOrOptionalFields_usesDefaults() {
         val raw = """[{"id":"a","name":"Hall","brandId":"lg","brandName":"LG"}]"""
+        // No codeListVersion: paired before code lists were versioned.
         assertEquals(
-            listOf(AcDevice("a", "Hall", "lg", "LG", configIndex = 0, createdAt = 0L, state = RemoteState())),
+            listOf(AcDevice("a", "Hall", "lg", "LG", configIndex = 0, createdAt = 0L, state = RemoteState(), codeListVersion = 0)),
             StoreJson.decodeDevices(raw)
         )
     }

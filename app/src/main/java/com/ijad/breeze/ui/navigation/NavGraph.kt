@@ -52,14 +52,16 @@ import kotlinx.coroutines.launch
 object Routes {
     const val Splash = "splash"
     const val Brand = "brand"
-    const val Pairing = "pairing/{brandId}"
+    const val Pairing = "pairing/{brandId}?repair={repair}"
     const val Remote = "remote"
     const val Timer = "timer"
     const val Settings = "settings"
     const val Privacy = "privacy"
     const val Terms = "terms"
 
-    fun pairing(brandId: String) = "pairing/$brandId"
+    /** [repairId]: an existing AC whose code is being found again. */
+    fun pairing(brandId: String, repairId: String? = null) =
+        if (repairId == null) "pairing/$brandId" else "pairing/$brandId?repair=$repairId"
 }
 
 /** Prototype push transition: 0.3s cubic-bezier(0.35, 0, 0.2, 1). */
@@ -130,10 +132,15 @@ fun BreezeNavHost(
             Routes.Pairing,
             navController,
             reduceMotion,
-            arguments = listOf(navArgument("brandId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("brandId") { type = NavType.StringType },
+                navArgument("repair") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { entry ->
             val brandId = entry.arguments?.getString("brandId").orEmpty()
             val brand = Brands.byId(brandId) ?: Brands.all.first()
+            val repairId = entry.arguments?.getString("repair")
+            val repairing = repairId?.let { id -> devices.firstOrNull { it.id == id } }
             PairingScreen(
                 brand = brand,
                 existingDevices = devices,
@@ -141,11 +148,16 @@ fun BreezeNavHost(
                 irTransmitter = irTransmitter,
                 onBack = { navController.popBackStack() },
                 onPaired = {
-                    navController.navigate(Routes.Remote) {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
+                    if (repairId != null) {
+                        navController.popBackStack()
+                    } else {
+                        navController.navigate(Routes.Remote) {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
-                }
+                },
+                repairing = repairing
             )
         }
         screen(Routes.Remote, navController, reduceMotion) {
@@ -162,7 +174,9 @@ fun BreezeNavHost(
                 onOpenSettings = { navController.navigate(Routes.Settings) },
                 onOpenTimer = { navController.navigate(Routes.Timer) },
                 onCancelTimer = { id -> cancelTimer(id) },
-                onAddAc = { navController.navigate(Routes.Brand) }
+                onAddAc = { navController.navigate(Routes.Brand) },
+                onFindCode = { d -> navController.navigate(Routes.pairing(d.brandId, repairId = d.id)) },
+                onCodeWorks = { id -> scope.launch { repository.confirmDeviceCode(id) } }
             )
         }
         screen(Routes.Timer, navController, reduceMotion) {

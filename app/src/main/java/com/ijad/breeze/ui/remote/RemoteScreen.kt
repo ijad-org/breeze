@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Eco
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Settings
@@ -94,6 +95,7 @@ import com.ijad.breeze.data.FanSpeed
 import com.ijad.breeze.data.RemoteState
 import com.ijad.breeze.data.TimerAction
 import com.ijad.breeze.ir.AcCommands
+import com.ijad.breeze.ir.BrandIr
 import com.ijad.breeze.ir.IrTransmitter
 import com.ijad.breeze.ui.components.CircleIconButton
 import com.ijad.breeze.ui.components.FanSteps
@@ -101,6 +103,7 @@ import com.ijad.breeze.ui.components.NoIrBanner
 import com.ijad.breeze.ui.components.PillChip
 import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.BreezeToggle
+import com.ijad.breeze.ui.components.ButtonVariant
 import com.ijad.breeze.ui.components.breezeBackground
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.components.pressScale
@@ -137,7 +140,9 @@ fun RemoteScreen(
     onOpenSettings: () -> Unit,
     onOpenTimer: () -> Unit,
     onCancelTimer: (deviceId: String) -> Unit,
-    onAddAc: () -> Unit
+    onAddAc: () -> Unit,
+    onFindCode: (AcDevice) -> Unit,
+    onCodeWorks: (deviceId: String) -> Unit
 ) {
     if (activeDevice == null) {
         EmptyRemote(onOpenSettings = onOpenSettings, onAddAc = onAddAc)
@@ -235,6 +240,14 @@ fun RemoteScreen(
 
             if (!irTransmitter.hasIrEmitter) {
                 NoIrBanner(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+            }
+            if (BrandIr.needsNewCode(activeDevice)) {
+                NewCodeBanner(
+                    brandName = activeDevice.brandName,
+                    onFindCode = { onFindCode(activeDevice) },
+                    onWorks = { onCodeWorks(activeDevice.id) },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
             }
 
             Box(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp), contentAlignment = Alignment.Center) {
@@ -746,5 +759,39 @@ private fun EmptyRemote(onOpenSettings: () -> Unit, onAddAc: () -> Unit) {
                 .fillMaxWidth()
                 .padding(start = 20.dp, end = 20.dp, bottom = 32.dp)
         )
+    }
+}
+
+/** For an AC paired before its brand's code list changed (see [BrandIr.needsNewCode]). */
+@Composable
+private fun NewCodeBanner(brandName: String, onFindCode: () -> Unit, onWorks: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .glass(accent = CoolTint, shape = RoundedCornerShape(16.dp))
+            .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 6.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 6.dp)) {
+            Icon(Icons.Rounded.Info, contentDescription = null, tint = CoolTint, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text("Find this AC's code again", style = MaterialTheme.typography.labelMedium, color = CoolTint)
+                Text(
+                    "Breeze now has several kinds of $brandName code. This AC was paired before them, so it may be using the wrong one.",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp,
+                    color = ink(0.55f)
+                )
+            }
+        }
+        Row(
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            RoundButton("It works", onClick = onWorks, variant = ButtonVariant.Ghost, tint = CoolTint, height = 36.dp, fontSize = 13)
+            RoundButton("Find code", onClick = onFindCode, tint = CoolTint, height = 36.dp, fontSize = 13)
+        }
     }
 }
