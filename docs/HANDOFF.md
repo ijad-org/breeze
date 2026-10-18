@@ -1,6 +1,6 @@
 # Breeze: handoff and pending work
 
-Last updated 2026-10-18. The design port and the missing features are done and pushed: `afafae5`, then `fc6b99c`. Mitsubishi and Voltas codecs were added on 2026-10-18.
+Last updated 2026-10-18. The design port and the missing features are done and pushed: `afafae5`, then `fc6b99c`. Mitsubishi and Voltas codecs were added on 2026-10-18, then Panasonic and Haier codecs and a protocol sweep for Blue Star and Other. Every brand in the list now sends real frames.
 This file lists what is still **unverified or open**, so a fresh session can continue without the previous chat.
 Read `CLAUDE.md` first for build setup, layout and design tokens.
 
@@ -29,6 +29,9 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 5. **Real IR on a Daikin unit.** Neither protocol has been tried on hardware. The ARC433B69 encoder reproduces a real remote capture byte for byte (IRremoteESP8266 issue #689). The 280-bit frames are checked against that library's timings and reset state, not against a capture.
 6. **Real IR on a Mitsubishi unit.** `MitsubishiIrCodec` reproduces a real MITSUBISHI_AC capture from IRremoteESP8266's tests byte for byte, but hasn't been tried on hardware. Mitsubishi Electric also uses 136-bit, 112-bit and Mitsubishi Heavy protocols, so a unit that ignores all 5 probes probably isn't on the 144-bit one.
 7. **Real IR on a Voltas unit.** `VoltasIrCodec` matches IRremoteESP8266's reset state and a real 122LZF capture (apart from the remote's WiFi bit, which the app leaves off), but hasn't been tried on hardware.
+8. **Real IR on a Panasonic unit.** `PanasonicIrCodec` reproduces a real JKE capture (IRremoteESP8266 #525) byte for byte. A real DKE capture (#1024) matches except byte 13, where that remote also sets the on/off timer flags at the "unset" time; the app leaves them clear. If a DKE unit ignores frames, try setting those flags (`0x0E`). Not tried on hardware. 36.7 kHz is within what ConsumerIrManager phones accept, but that hasn't been checked on a device either.
+9. **Real IR on a Haier unit.** `HaierIrCodec` reproduces a real HSU07-HEA03 capture (IRremoteESP8266 #668) byte for byte. A real 176-bit capture (#1480) matches apart from an undocumented vane value. YR-W02 is checked against the library layout and real-capture checksums. Not tried on hardware. Health (ionizer) is sent off, as the library's `IRac` does.
+10. **Blue Star / Other sweep on hardware and in the UI.** Pairing for these brands shows "Code 1 of 15" and steps through `BrandIr.SWEEP`. Check the Find code screen with 15 codes on the emulator, and on hardware that a Blue Star unit responds to one of the variants (some Blue Star units are OEM builds of other brands, but that's unconfirmed).
 
 ### Verified on 2026-10-09
 
@@ -59,9 +62,12 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 ## Open items and known limitations (not bugs)
 
-- **IR for brands other than LG, Samsung, Carrier, Daikin, Mitsubishi and Voltas is a placeholder.** `BrandIr` returns null for control, so the Remote toasts "Codes coming for X" once per AC. Real codecs would go in `ir/` next to the existing `*IrCodec` files, plus a branch in `BrandIr`.
+- **Blue Star and Other use the protocol sweep.** They have no codec of their own, so pairing tries every supported variant (`BrandIr.SWEEP`) and `configIndex` stores the index. Only append to `SWEEP`, or paired ACs will switch protocol. A new codec goes in `ir/` next to the existing `*IrCodec` files, plus a `Codec` in `BrandIr` (and a `SWEEP` entry at the end).
+- **ACs paired before a brand got its codec** keep their old placeholder code index. For Panasonic and Haier an index past the probe list falls back to the first variant (DKE, YR-W02). For Blue Star and Other the index now picks a sweep variant that was never tested against that AC. Re-pairing fixes both.
 - **Carrier has no Dry or Auto.** CARRIER_AC64 only encodes Heat, Cool and Fan. Dry and Auto are sent as Cool while the UI still shows the chosen mode.
-- **Blue Star has no codec yet.** IRremoteESP8266 has only `sendBluestarHeavy`, a raw sender with a single example frame (13 bytes, remote D716LXM0535A2400313) and no documented fields. A full-state encoder needs captures from a real Blue Star remote, ideally several with one setting changed each.
+- **Blue Star has no codec of its own.** IRremoteESP8266 has only `sendBluestarHeavy`, a raw sender with a single example frame (13 bytes, remote D716LXM0535A2400313) and no documented fields. A full-state encoder needs captures from a real Blue Star remote, ideally several with one setting changed each. Until then Blue Star uses the protocol sweep.
+- **Panasonic CKP and PANASONIC_AC32 aren't covered.** CKP remotes (CS-ME10CKPG …) toggle power instead of setting it, and AC32 (A75C2295) is a different 32-bit protocol. Both need power handling that knows the AC's current state.
+- **Haier covers three of its protocols.** `HAIER_AC160` (KFR-26GW/83@UI-Ge) isn't covered.
 - **Voltas has no Auto mode, and Dry is fixed.** Auto is sent as Cool. In Dry the protocol forces 24° and low fan, so the AC ignores the temperature and fan shown in the UI.
 - **Daikin covers two of its protocols.** Only the 280-bit and 216-bit protocols are covered. Others such as Daikin2 (ARC477A1), 160, 176, 152, 128 and 64 aren't. A Daikin AC that was paired before this change has a placeholder code index, so it falls back to the 280-bit protocol. Re-pairing picks the right one.
 - **Presets are combinations.** Sleep (+1°, low fan), Eco (Cool 26°, auto fan) and Turbo (Cool 18°, high fan) are plain mode/temperature/fan settings, because the LG classic codec has no sleep or turbo bits.
@@ -72,7 +78,7 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
   - Release has `isMinifyEnabled = false` and ships about 42 MB of dex, mostly `material-icons-extended`. Enabling R8 is the likely real win on low-end phones. It needs keep rules and a full UI pass.
   - Measuring with `am force-stop` re-delivers `BOOT_COMPLETED` on API 35+ (about 220 ms on the main thread in traces). That's an artifact of the method, not a user-facing cost.
   - Trustworthy numbers need a physical phone or a Macrobenchmark module.
-- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec`, `SamsungIrCodec`, `CarrierIrCodec`, `DaikinIrCodec`, `MitsubishiIrCodec` and `VoltasIrCodec` (frames, checksums, clamping, real captures), `BrandIr` routing, `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
+- **Unit tests cover only pure logic.** `app/src/test` has JVM tests for `LgIrCodec`, `SamsungIrCodec`, `CarrierIrCodec`, `DaikinIrCodec`, `MitsubishiIrCodec`, `VoltasIrCodec`, `PanasonicIrCodec` and `HaierIrCodec` (frames, checksums, clamping, real captures), `BrandIr` routing (including the sweep), `TimerScheduler.afterDuration` / `nextTimeOfDay` (rollover, DST) and `StoreJson` (round-trip, legacy device JSON without `state`). Run them with `./gradlew testDebugUnitTest`. There are no UI tests yet. Roborazzi screenshot tests could compare against `docs/design/*.png` without an emulator.
 
 ## Environment notes
 

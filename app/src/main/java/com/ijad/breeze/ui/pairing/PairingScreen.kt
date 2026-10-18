@@ -99,7 +99,7 @@ fun PairingScreen(
     val scope = rememberCoroutineScope()
     val dark = LocalBreezeDark.current
     val tint = CoolTint
-    val totalCodes = BrandIr.probeCount(brand.id, brand.codeCount)
+    val totalCodes = BrandIr.probeCount(brand.id)
     var index by rememberSaveable { mutableStateOf(0) }
     var naming by rememberSaveable { mutableStateOf(false) }
 

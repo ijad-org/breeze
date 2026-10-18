@@ -16,7 +16,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 - minSdk 26, target/compile 35, AGP 8.7, Kotlin 2.0, Compose BOM 2024.12.01. Versions are in `gradle/libs.versions.toml`.
 - Repositories go through aliyun mirrors (`settings.gradle.kts`). Avoid adding new dependencies unless needed.
-- JVM unit tests: `./gradlew testDebugUnitTest`. They cover `LgIrCodec`, `SamsungIrCodec`, `CarrierIrCodec`, `DaikinIrCodec`, `MitsubishiIrCodec` and `VoltasIrCodec` frames, `BrandIr` routing, `TimerScheduler` time math and `StoreJson` (device/timer JSON, including legacy JSON). UI still has to be verified on an emulator or device (see "Verifying UI" below).
+- JVM unit tests: `./gradlew testDebugUnitTest`. They cover `LgIrCodec`, `SamsungIrCodec`, `CarrierIrCodec`, `DaikinIrCodec`, `MitsubishiIrCodec`, `VoltasIrCodec`, `PanasonicIrCodec` and `HaierIrCodec` frames, `BrandIr` routing, `TimerScheduler` time math and `StoreJson` (device/timer JSON, including legacy JSON). UI still has to be verified on an emulator or device (see "Verifying UI" below).
 
 ## Layout
 
@@ -24,7 +24,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 app/src/main/java/com/ijad/breeze/
   MainActivity.kt          theme resolution + edge-to-edge system bar style
   data/                    Models (AcBrand, AcDevice, RemoteState, enums), AppRepository (DataStore), StoreJson (device/timer JSON)
-  ir/                      IrTransmitter (ConsumerIrManager), BrandIr (pattern lookup), LgIrCodec (real LG 28-bit), SamsungIrCodec (real Samsung 21-byte), CarrierIrCodec (Carrier 64-bit), DaikinIrCodec (Daikin 280/216-bit), MitsubishiIrCodec (Mitsubishi 144-bit), VoltasIrCodec (Voltas 80-bit)
+  ir/                      IrTransmitter (ConsumerIrManager), BrandIr (pattern lookup), LgIrCodec (real LG 28-bit), SamsungIrCodec (real Samsung 21-byte), CarrierIrCodec (Carrier 64-bit), DaikinIrCodec (Daikin 280/216-bit), MitsubishiIrCodec (Mitsubishi 144-bit), VoltasIrCodec (Voltas 80-bit), PanasonicIrCodec (Panasonic 216-bit), HaierIrCodec (Haier 112/176/72-bit)
   timer/                   TimerScheduler (AlarmManager), TimerReceiver (fires IR + notification), BootReceiver
   ui/theme/                Breeze tokens: mode tints, surfaces, ink(alpha), Plus Jakarta Sans type
   ui/components/           Prototype primitives: GlassCard, RoundButton, BreezeToggle, FanSteps, AppBar, ModeChip…
@@ -67,7 +67,10 @@ State lives in `AppRepository`, which is DataStore Preferences. There is no DI, 
 - **Daikin** sends full-state frames at 38 kHz (`DaikinIrCodec`): power, mode, temp, fan and vertical swing in every press. Two protocols: `DAIKIN` 280-bit (ARC4xx remotes) and `DAIKIN216` (ARC433B69). Pairing has 4 codes (on, off per protocol), and `configIndex / 2` picks the protocol. Out-of-range indices fall back to 280-bit.
 - **Mitsubishi** sends full-state MITSUBISHI_AC 144-bit frames at 38 kHz, LSB first, twice per press like the real remote (`MitsubishiIrCodec`, from IRremoteESP8266 `ir_Mitsubishi`). Power, mode, temp, fan and swing work. Swing on is the vane's swing setting, and swing off is its auto position. A swing toggle resends the whole state.
 - **Voltas** sends full-state VOLTAS 80-bit frames at 38 kHz, MSB first, with no header (`VoltasIrCodec`, from IRremoteESP8266 `ir_Voltas`, 122LZF remote). Power, temp, fan and swing work. The protocol has no Auto mode, so Auto is sent as Cool. Like the real remote, Dry always sends 24° and low fan, and Fan mode sends high fan instead of Auto. A swing toggle resends the whole state.
-- Other brands send a placeholder chirp during pairing, and control shows "Codes coming for X". Don't present these as working.
+- **Panasonic** sends full-state PANASONIC_AC 216-bit frames at 36.7 kHz, LSB first, in an 8-byte and a 19-byte section (`PanasonicIrCodec`, from IRremoteESP8266 `ir_Panasonic`). Power, mode, temp, fan and swing work. Pairing has 10 codes (on, off per remote model: DKE, NKE, JKE, LKE, RKR), and `configIndex / 2` picks the model. Fan mode always sends 27°, like the library. CKP remotes toggle power, so they aren't covered.
+- **Haier** sends full-state frames at 38 kHz, MSB first, after a double header (`HaierIrCodec`, from IRremoteESP8266 `ir_Haier`). Three protocols: `HAIER_AC_YRW02` (YR-W02), `HAIER_AC176` (V9014557) and `HAIER_AC` (HSU07-HEA03). Pairing has 6 codes (on, off per protocol), and `configIndex / 2` picks the protocol. Each frame names a button: Power for control and Swing for a swing toggle.
+- **Blue Star and Other** have no codec of their own. Pairing steps through every supported variant (`BrandIr.SWEEP`, 15 codes, one Cool 24° ON probe each), and `configIndex` is the index into that list, so only ever append to it.
+- An unknown brand id has no probes, and control shows "Codes coming for X".
 - Presets (Sleep/Eco/Turbo) are combinations of mode, temp and fan, because the codecs don't send sleep or turbo bits.
 - Timers are app-side alarms. The phone must still be pointed at the AC when the alarm fires.
 

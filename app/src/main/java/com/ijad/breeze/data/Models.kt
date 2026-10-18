@@ -3,9 +3,7 @@ package com.ijad.breeze.data
 data class AcBrand(
     val id: String,
     val name: String,
-    val letter: Char,
-    /** How many IR config probes this brand exposes during pairing. */
-    val codeCount: Int
+    val letter: Char
 )
 
 /** Last known remote state for one AC; persisted so each room restores where it left off. */
@@ -60,16 +58,16 @@ data class AcTimer(
 
 object Brands {
     val all: List<AcBrand> = listOf(
-        AcBrand("samsung", "Samsung", 'S', 12),
-        AcBrand("lg", "LG", 'L', 5),
-        AcBrand("daikin", "Daikin", 'D', 4),
-        AcBrand("mitsubishi", "Mitsubishi", 'M', 5),
-        AcBrand("voltas", "Voltas", 'V', 5),
-        AcBrand("bluestar", "Blue Star", 'B', 10),
-        AcBrand("carrier", "Carrier", 'C', 5),
-        AcBrand("haier", "Haier", 'H', 10),
-        AcBrand("panasonic", "Panasonic", 'P', 10),
-        AcBrand("other", "Other", '?', 8)
+        AcBrand("samsung", "Samsung", 'S'),
+        AcBrand("lg", "LG", 'L'),
+        AcBrand("daikin", "Daikin", 'D'),
+        AcBrand("mitsubishi", "Mitsubishi", 'M'),
+        AcBrand("voltas", "Voltas", 'V'),
+        AcBrand("bluestar", "Blue Star", 'B'),
+        AcBrand("carrier", "Carrier", 'C'),
+        AcBrand("haier", "Haier", 'H'),
+        AcBrand("panasonic", "Panasonic", 'P'),
+        AcBrand("other", "Other", '?')
     )
 
     fun byId(id: String): AcBrand? = all.firstOrNull { it.id == id }
