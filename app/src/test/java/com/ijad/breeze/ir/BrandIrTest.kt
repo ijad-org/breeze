@@ -46,6 +46,16 @@ class BrandIrTest {
     }
 
     @Test
+    fun voltas_routesControlAndSwingToVoltasCodec() {
+        val state = RemoteState(true, AcMode.Heat, 21, FanSpeed.Low, true)
+        val expected = VoltasIrCodec.patternFor(true, AcMode.Heat, 21, FanSpeed.Low, true)
+        assertArrayEquals(expected, BrandIr.controlPattern("voltas", 0, state)!!.micros)
+        assertArrayEquals(expected, BrandIr.swingPattern("voltas", 0, state)!!.micros)
+        assertEquals(5, BrandIr.probeCount("voltas", 99))
+        assertArrayEquals(VoltasIrCodec.powerProbeVariants()[4], BrandIr.powerProbe("voltas", 40)!!.micros)
+    }
+
+    @Test
     fun daikin_configIndexPicksProtocol() {
         val state = RemoteState(true, AcMode.Cool, 24, FanSpeed.Auto, true)
         for ((index, protocol) in listOf(0 to DaikinIrCodec.Protocol.Arc4xx, 3 to DaikinIrCodec.Protocol.Arc433b69)) {

@@ -64,7 +64,7 @@ object Brands {
         AcBrand("lg", "LG", 'L', 5),
         AcBrand("daikin", "Daikin", 'D', 4),
         AcBrand("mitsubishi", "Mitsubishi", 'M', 5),
-        AcBrand("voltas", "Voltas", 'V', 10),
+        AcBrand("voltas", "Voltas", 'V', 5),
         AcBrand("bluestar", "Blue Star", 'B', 10),
         AcBrand("carrier", "Carrier", 'C', 5),
         AcBrand("haier", "Haier", 'H', 10),
