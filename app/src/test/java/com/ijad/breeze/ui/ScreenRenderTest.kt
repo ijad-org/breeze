@@ -121,6 +121,31 @@ class ScreenRenderTest {
         save("remote-new-code-dark")
     }
 
+    /** From API 36, large screens ignore the portrait lock: content stays phone-width, centred. */
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-mdpi")
+    fun remote_tabletLandscape() {
+        render(dark = true) { RemoteWithOldPairing() }
+        compose.mainClock.advanceTimeBy(1_000)
+        save("remote-tablet-landscape-dark")
+    }
+
+    @Test
+    @Config(qualifiers = "w841dp-h701dp-mdpi")
+    fun welcome_foldableUnfolded() {
+        render(dark = false) { SplashScreen(onGetStarted = {}) }
+        compose.mainClock.advanceTimeBy(1_500)
+        save("welcome-foldable-light")
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-mdpi")
+    fun findCode_tabletLandscape() {
+        render(dark = false) { Pairing("daikin") }
+        compose.mainClock.advanceTimeBy(1_000)
+        save("find-code-tablet-landscape-light")
+    }
+
     @Test
     fun findCode_light() {
         render(dark = false) { Pairing("bluestar") }

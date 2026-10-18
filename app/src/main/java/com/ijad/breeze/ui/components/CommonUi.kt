@@ -9,6 +9,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,6 +91,15 @@ fun Modifier.breezeBackground(tint: Color, intensity: Float = 1f): Modifier {
         }
     }
 }
+
+/** Widest a screen's content gets; every phone is narrower, so this only applies on tablets and foldables. */
+val MaxContentWidth = 480.dp
+
+/**
+ * Centres the content at up to [MaxContentWidth]. Put it after [breezeBackground] so the
+ * background still fills the window. From API 36, large screens ignore the portrait lock.
+ */
+fun Modifier.phoneWidth(): Modifier = wrapContentWidth(Alignment.CenterHorizontally).widthIn(max = MaxContentWidth)
 
 /** CSS `radial-gradient(ellipse rx% ry% at center, color 0%, transparent stop%)`. */
 private fun DrawScope.ellipseGlow(color: Color, center: Offset, rxFrac: Float, ryFrac: Float, stop: Float) {

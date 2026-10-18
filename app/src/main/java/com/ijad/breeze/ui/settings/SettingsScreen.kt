@@ -68,6 +68,7 @@ import com.ijad.breeze.ui.components.GlassCard
 import com.ijad.breeze.ui.components.RowDivider
 import com.ijad.breeze.ui.components.SectionLabel
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.theme.AutoTint
 import com.ijad.breeze.ui.theme.CoolTint
@@ -103,6 +104,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(AutoTint)
+            .phoneWidth()
     ) {
         BreezeAppBar(title = "Settings", onBack = onBack)
 

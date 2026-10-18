@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.ijad.breeze.ui.components.BreezeAppBar
 import com.ijad.breeze.ui.components.GlassCard
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.theme.AutoTint
 import com.ijad.breeze.ui.theme.ink
 
@@ -51,6 +52,7 @@ fun LegalScreen(doc: LegalDoc, onBack: () -> Unit) {
         Modifier
             .fillMaxSize()
             .breezeBackground(AutoTint)
+            .phoneWidth()
     ) {
         BreezeAppBar(title = doc.title, onBack = onBack)
         Column(

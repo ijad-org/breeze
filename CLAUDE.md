@@ -8,13 +8,13 @@ It is written in Kotlin and Jetpack Compose, and the UI is a pixel port of a Fig
 ## Build & run
 
 ```bash
-export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home   # JDK 17. Gradle 8.9 can't run on Android Studio's bundled JDK 25.
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home   # JDK 17. Gradle 8.13 can't run on Android Studio's bundled JDK 25.
 export ANDROID_HOME=~/Library/Android/sdk
 ./gradlew assembleDebug --no-daemon
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-- minSdk 26, target/compile 35, AGP 8.7, Kotlin 2.0, Compose BOM 2024.12.01. Versions are in `gradle/libs.versions.toml`.
+- minSdk 26, target/compile 36 (Google Play's minimum for new apps and updates since 2026-08-31), AGP 8.13, Gradle 8.13, Kotlin 2.0, Compose BOM 2024.12.01. Versions are in `gradle/libs.versions.toml`.
 - Repositories go through aliyun mirrors (`settings.gradle.kts`). Avoid adding new dependencies unless needed.
 - JVM unit tests: `./gradlew testDebugUnitTest`. They cover `LgIrCodec`, `SamsungIrCodec`, `CarrierIrCodec`, `DaikinIrCodec`, `MitsubishiIrCodec`, `VoltasIrCodec`, `PanasonicIrCodec`, `HaierIrCodec`, `GreeIrCodec` and `CoolixIrCodec` frames, `BrandIr` routing, `TimerScheduler` time math and `StoreJson` (device/timer JSON, including legacy JSON). `ScreenRenderTest` renders screens to PNGs and only runs when asked (see "Verifying UI" below).
 
@@ -57,6 +57,7 @@ State lives in `AppRepository`, which is DataStore Preferences. There is no DI, 
 - Glass card: light fill `white@.72` with a `white@.85` border; dark fill `white@.07` with a `white@.10` border; radius 24. An optional accent fill is used instead (α .08 light, .10 dark). No real blur, because only gradients sit behind the cards.
 - The typeface is Plus Jakarta Sans (bundled in `res/font`, OFL). Type scale: 64/800 temperature, 28/800 hero title, 20/700 app bar, 15/500 body, 11–12/700 uppercase labels.
 - Motion: screen push slide 300ms `cubic-bezier(.35,0,.2,1)`; welcome rings 3s staggered .75s; find-code pulse 2.2s; dial arc 350ms.
+- Large screens: from API 36, tablets and unfolded foldables (600dp and wider) ignore the portrait lock. Every screen root applies `Modifier.phoneWidth()` right after `breezeBackground`, so content stays centred at up to 480dp (`MaxContentWidth`) while the background fills the window. Phones are narrower than that, so nothing changes on them. New screens need the same.
 - Screen tint: Welcome, Find code and Timer use Cool. Brand and Settings use Auto. Remote uses the current mode, and Auto/slate when powered off.
 
 ## IR status

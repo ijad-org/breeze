@@ -54,6 +54,7 @@ import com.ijad.breeze.ui.components.ButtonVariant
 import com.ijad.breeze.ui.components.CircleIconButton
 import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.components.pressScale
 import com.ijad.breeze.ui.theme.CoolTint
@@ -109,6 +110,7 @@ fun TimerScreen(
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(tint)
+            .phoneWidth()
             .navigationBarsPadding()
     ) {
         BreezeAppBar(title = "Timer", onBack = onBack)

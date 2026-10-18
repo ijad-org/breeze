@@ -71,6 +71,7 @@ import com.ijad.breeze.ui.components.NoIrBanner
 import com.ijad.breeze.ui.components.PillChip
 import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.components.pressScale
 import com.ijad.breeze.ui.components.rememberFrameMillis
@@ -138,6 +139,7 @@ fun PairingScreen(
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(tint)
+            .phoneWidth()
             .navigationBarsPadding()
     ) {
         BreezeAppBar(

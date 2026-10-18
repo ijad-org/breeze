@@ -50,7 +50,7 @@ The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and 
 ## Build
 
 ```bash
-export JAVA_HOME=/path/to/jdk-17   # Gradle 8.9 needs JDK 17/21, not 25
+export JAVA_HOME=/path/to/jdk-17   # Gradle 8.13 needs JDK 17/21, not 25
 export ANDROID_HOME=~/Library/Android/sdk
 ./gradlew assembleDebug --no-daemon
 ```

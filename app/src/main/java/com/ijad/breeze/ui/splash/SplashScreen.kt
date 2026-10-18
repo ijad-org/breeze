@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.components.rememberFrameMillis
 import com.ijad.breeze.ui.theme.CoolTint
 import com.ijad.breeze.ui.theme.CssEaseOut
@@ -44,6 +45,7 @@ fun SplashScreen(onGetStarted: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(tint)
+            .phoneWidth()
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
