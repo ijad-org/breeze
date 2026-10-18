@@ -108,6 +108,22 @@ class AppRepository(context: Context) {
         updateDevices { list -> list.map { if (it.id == deviceId) it.copy(name = name) else it } }
     }
 
+    /** A new code from re-pairing an existing AC; name, state and timer stay as they are. */
+    suspend fun updateDeviceCode(deviceId: String, configIndex: Int) {
+        updateDevices { list ->
+            list.map {
+                if (it.id == deviceId) it.copy(configIndex = configIndex, codeListVersion = Brands.CODE_LIST_VERSION) else it
+            }
+        }
+    }
+
+    /** The user says the AC's current code works, so stop asking to find it again. */
+    suspend fun confirmDeviceCode(deviceId: String) {
+        updateDevices { list ->
+            list.map { if (it.id == deviceId) it.copy(codeListVersion = Brands.CODE_LIST_VERSION) else it }
+        }
+    }
+
     suspend fun updateDeviceState(deviceId: String, state: RemoteState) {
         updateDevices { list -> list.map { if (it.id == deviceId) it.copy(state = state) else it } }
     }

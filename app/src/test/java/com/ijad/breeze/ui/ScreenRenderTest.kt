@@ -11,10 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ijad.breeze.data.AcDevice
 import com.ijad.breeze.data.AppRepository
 import com.ijad.breeze.data.Brands
 import com.ijad.breeze.ir.IrTransmitter
 import com.ijad.breeze.ui.pairing.PairingScreen
+import com.ijad.breeze.ui.remote.RemoteScreen
 import com.ijad.breeze.ui.splash.SplashScreen
 import com.ijad.breeze.ui.theme.BreezeTheme
 import com.ijad.breeze.ui.theme.surfaceColor
@@ -81,6 +83,42 @@ class ScreenRenderTest {
             onBack = {},
             onPaired = {}
         )
+    }
+
+    /** A Daikin AC saved before code lists were versioned, so the Remote asks to find its code again. */
+    @Composable
+    private fun RemoteWithOldPairing() {
+        val device = AcDevice("a", "Living Room", "daikin", "Daikin", 7, codeListVersion = 0)
+        RemoteScreen(
+            devices = listOf(device),
+            activeDevice = device,
+            timer = null,
+            tempAlerts = true,
+            ecoTips = false,
+            irTransmitter = IrTransmitter(LocalContext.current),
+            onSelectDevice = {},
+            onStateChange = { _, _ -> },
+            onOpenSettings = {},
+            onOpenTimer = {},
+            onCancelTimer = {},
+            onAddAc = {},
+            onFindCode = {},
+            onCodeWorks = {}
+        )
+    }
+
+    @Test
+    fun remote_newCodeBanner_light() {
+        render(dark = false) { RemoteWithOldPairing() }
+        compose.mainClock.advanceTimeBy(1_000)
+        save("remote-new-code-light")
+    }
+
+    @Test
+    fun remote_newCodeBanner_dark() {
+        render(dark = true) { RemoteWithOldPairing() }
+        compose.mainClock.advanceTimeBy(1_000)
+        save("remote-new-code-dark")
     }
 
     @Test

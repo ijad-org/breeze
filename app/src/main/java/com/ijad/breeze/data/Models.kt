@@ -22,7 +22,9 @@ data class AcDevice(
     val brandName: String,
     val configIndex: Int,
     val createdAt: Long = System.currentTimeMillis(),
-    val state: RemoteState = RemoteState()
+    val state: RemoteState = RemoteState(),
+    /** [Brands.CODE_LIST_VERSION] when this AC was paired; 0 for ACs saved before it existed. */
+    val codeListVersion: Int = Brands.CODE_LIST_VERSION
 )
 
 enum class AcMode(val label: String) {
@@ -57,6 +59,14 @@ data class AcTimer(
 )
 
 object Brands {
+    /**
+     * Version of the pairing code lists in `BrandIr`. Bump it when a change makes stored
+     * `configIndex` values pick a different protocol, so older pairings are asked to find
+     * their code again. 1: the multi-protocol code lists of Daikin, Panasonic, Haier, Blue Star,
+     * Carrier (with Coolix) and Other.
+     */
+    const val CODE_LIST_VERSION = 1
+
     val all: List<AcBrand> = listOf(
         AcBrand("samsung", "Samsung", 'S'),
         AcBrand("lg", "LG", 'L'),

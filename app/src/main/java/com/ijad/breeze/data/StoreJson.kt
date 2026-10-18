@@ -19,6 +19,7 @@ internal object StoreJson {
                     .put("brandName", d.brandName)
                     .put("configIndex", d.configIndex)
                     .put("createdAt", d.createdAt)
+                    .put("codeListVersion", d.codeListVersion)
                     .put(
                         "state",
                         JSONObject()
@@ -48,7 +49,8 @@ internal object StoreJson {
                             brandName = o.getString("brandName"),
                             configIndex = o.optInt("configIndex", 0),
                             createdAt = o.optLong("createdAt", 0L),
-                            state = decodeState(o.optJSONObject("state"))
+                            state = decodeState(o.optJSONObject("state")),
+                            codeListVersion = o.optInt("codeListVersion", 0)
                         )
                     )
                 }

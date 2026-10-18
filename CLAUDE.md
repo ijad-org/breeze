@@ -74,6 +74,7 @@ State lives in `AppRepository`, which is DataStore Preferences. There is no DI, 
 - **Blue Star** pairs against Gree BlueStar, Gree YAW1F and Coolix (6 codes, `configIndex / 2`). The Blue Star 104-bit "Heavy" protocol has only one raw example, so it isn't covered.
 - **Carrier** pairing has 7 codes: 5 CARRIER_AC64 probes, then Coolix on and off for Midea-built units (`configIndex >= 5`).
 - **Other** steps through every supported variant (`BrandIr.SWEEP`, 21 codes, one Cool 24° ON probe each (a power toggle for CKP and AC32)), and `configIndex` is the index into that list, so only ever append to it.
+- **Older pairings.** Each device stores `codeListVersion` (`Brands.CODE_LIST_VERSION` at pairing, 0 for JSON saved before the field existed). `BrandIr.needsNewCode` is true for an older pairing on a brand whose code picks the protocol (Carrier, Daikin, Panasonic, Haier, Blue Star, Other). The Remote then shows a "Find this AC's code again" banner. "Find code" re-pairs that same AC (`Routes.pairing(brandId, repairId)`), keeping its name, state and timer, and "It works" stores the current version. If a change ever makes stored codes pick a different protocol, bump `CODE_LIST_VERSION`.
 - An unknown brand id has no probes, and control shows "Codes coming for X".
 - Presets (Sleep/Eco/Turbo) are combinations of mode, temp and fan, because the codecs don't send sleep or turbo bits.
 - Timers are app-side alarms. The phone must still be pointed at the AC when the alarm fires.

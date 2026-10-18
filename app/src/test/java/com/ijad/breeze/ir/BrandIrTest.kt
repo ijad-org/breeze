@@ -1,14 +1,33 @@
 package com.ijad.breeze.ir
 
+import com.ijad.breeze.data.AcDevice
 import com.ijad.breeze.data.AcMode
+import com.ijad.breeze.data.Brands
 import com.ijad.breeze.data.FanSpeed
 import com.ijad.breeze.data.RemoteState
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BrandIrTest {
+
+    @Test
+    fun needsNewCode_onlyForOlderPairingsWhereTheCodePicksTheProtocol() {
+        fun device(brandId: String, version: Int) = AcDevice("a", "Hall", brandId, brandId, 3, codeListVersion = version)
+        val picksProtocol = listOf("carrier", "daikin", "panasonic", "haier", "bluestar", "other")
+        // One protocol each, so the stored code doesn't matter.
+        val singleProtocol = listOf("lg", "samsung", "mitsubishi", "voltas")
+        for (brand in picksProtocol) {
+            assertTrue(brand, BrandIr.needsNewCode(device(brand, 0)))
+            assertFalse(brand, BrandIr.needsNewCode(device(brand, Brands.CODE_LIST_VERSION)))
+        }
+        for (brand in singleProtocol) assertFalse(brand, BrandIr.needsNewCode(device(brand, 0)))
+        // A new brand has to be put in one group or the other.
+        assertEquals(Brands.all.map { it.id }.sorted(), (picksProtocol + singleProtocol).sorted())
+    }
 
     @Test
     fun carrier_routesControlToCarrierCodec() {
