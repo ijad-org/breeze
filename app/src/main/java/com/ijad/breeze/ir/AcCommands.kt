@@ -12,9 +12,11 @@ object AcCommands {
         data class Failed(val message: String) : Result
     }
 
-    fun sendState(ir: IrTransmitter, device: AcDevice, state: RemoteState): Result {
+    /** [previous] is the AC's last known state; toggle-power protocols need to know if power changed. */
+    fun sendState(ir: IrTransmitter, device: AcDevice, previous: RemoteState, state: RemoteState): Result {
         if (!ir.hasIrEmitter) return Result.NoEmitter
-        val pattern = BrandIr.controlPattern(device.brandId, device.configIndex, state)
+        val powerChanged = previous.poweredOn != state.poweredOn
+        val pattern = BrandIr.controlPattern(device.brandId, device.configIndex, state, powerChanged)
             ?: return Result.Unsupported(device.brandName)
         return ir.transmit(pattern.frequencyHz, pattern.micros).toResult()
     }

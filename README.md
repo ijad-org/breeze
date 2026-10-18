@@ -16,7 +16,7 @@ The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and 
 |------|--------|
 | Welcome | Expanding rings + spinning fan, matching the prototype animations |
 | Brand select + search | Working (10 brands) |
-| Find-your-code pairing | Pulsing power probe, prev/next codes, then a "Name this AC" sheet. LG, Samsung, Carrier, Daikin, Mitsubishi and Voltas send real probes |
+| Find-your-code pairing | Pulsing power probe, prev/next codes, then a "Name this AC" sheet. Every brand sends real probes |
 | Remote | Mode-tinted dial and background, Cool/Heat/Dry/Fan/Auto, 4-step fan (Low/Mid/High/Auto), swing, greyed power-off state, per-AC state saved |
 | Presets | Sleep (+1°, low fan), Eco (Cool 26°, auto fan), Turbo (Cool 18°, high fan) |
 | Timer | "Turn off in" / "Turn on at" via AlarmManager. Sends IR when it fires (phone must face the AC), optional reminder notification, survives reboot |
@@ -30,11 +30,15 @@ The UI is a port of the Figma Make prototype. See `docs/source/src/App.tsx` and 
 - Android **ConsumerIrManager** (`TRANSMIT_IR`, feature optional)
 - **LG**: classic 28-bit frames @ 38 kHz via `LgIrCodec` (adapted from AC Remote Easy)
 - **Samsung**: 21-byte extended frames @ 38 kHz via `SamsungIrCodec` (protocol from IRremoteESP8266 `ir_Samsung`)
-- **Carrier**: 64-bit full-state frames @ 38 kHz via `CarrierIrCodec` (CARRIER_AC64, after IRremoteESP8266). Dry and Auto are sent as Cool
+- **Carrier**: 64-bit full-state frames @ 38 kHz via `CarrierIrCodec` (CARRIER_AC64, after IRremoteESP8266). Dry and Auto are sent as Cool. Pairing then offers Coolix codes for Midea-built units
 - **Daikin**: full-state frames @ 38 kHz via `DaikinIrCodec`, in two protocols picked at pairing: 280-bit (ARC4xx remotes) and 216-bit (ARC433B69). Layouts follow IRremoteESP8266
 - **Mitsubishi**: 144-bit full-state frames @ 38 kHz via `MitsubishiIrCodec` (MITSUBISHI_AC, after IRremoteESP8266), sent twice per press like the real remote
 - **Voltas**: 80-bit full-state frames @ 38 kHz via `VoltasIrCodec` (VOLTAS 122LZF, after IRremoteESP8266). Auto is sent as Cool, and Dry always sends 24° with low fan
-- **Other brands**: placeholder chirps / Toast *"codes coming"* for v1
+- **Panasonic**: 216-bit full-state frames @ 36.7 kHz via `PanasonicIrCodec` (PANASONIC_AC, after IRremoteESP8266), with the remote model (DKE, NKE, JKE, LKE, RKR, CKP) picked at pairing, plus the separate 32-bit PANASONIC_AC32 protocol. CKP and AC32 toggle power, so the app sends the toggle only when its power state changes
+- **Haier**: full-state frames @ 38 kHz via `HaierIrCodec`, in four protocols picked at pairing: YR-W02 (112-bit), 176-bit (V9014557), HSU07-HEA03 (72-bit) and 160-bit (KFR-26GW). Layouts follow IRremoteESP8266
+- **Blue Star**: published Blue Star captures are Gree and Coolix frames, so pairing offers Gree (exactly as Blue Star remotes send it, then plain YAW1F) and Coolix
+- **Gree** / **Coolix**: 64-bit Gree (`GreeIrCodec`) and 24-bit Coolix (`CoolixIrCodec`, Midea-family) full-state frames @ 38 kHz, after IRremoteESP8266. Coolix swing is a toggle command
+- **Other**: pairing steps through every supported protocol variant above, one probe each, and keeps the one the AC responds to
 - Empty banner when `hasIrEmitter()` is false
 
 ## Requirements

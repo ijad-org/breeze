@@ -20,8 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -31,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.rememberFrameMillis
 import com.ijad.breeze.ui.theme.CoolTint
 import com.ijad.breeze.ui.theme.CssEaseOut
 import com.ijad.breeze.ui.theme.LocalReduceMotion
@@ -108,11 +107,7 @@ private const val ReducedMotionRingFrame = 2625L
 private fun BreezeRings() {
     val tint = CoolTint
     val reduceMotion = LocalReduceMotion.current
-    val elapsed by produceState(if (reduceMotion) ReducedMotionRingFrame else 0L, reduceMotion) {
-        if (reduceMotion) return@produceState
-        val start = withFrameMillis { it }
-        while (true) withFrameMillis { value = it - start }
-    }
+    val elapsed by rememberFrameMillis(if (reduceMotion) ReducedMotionRingFrame else 0L, paused = reduceMotion)
     val spin = if (reduceMotion) 0f else (elapsed % 4000L) / 4000f * 360f
     Box(Modifier.size(200.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(200.dp)) {

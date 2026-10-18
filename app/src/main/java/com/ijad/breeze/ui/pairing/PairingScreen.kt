@@ -41,8 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,6 +73,7 @@ import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.breezeBackground
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.components.pressScale
+import com.ijad.breeze.ui.components.rememberFrameMillis
 import com.ijad.breeze.ui.theme.CoolTint
 import com.ijad.breeze.ui.theme.CssEaseOut
 import com.ijad.breeze.ui.theme.LocalReduceMotion
@@ -99,7 +98,7 @@ fun PairingScreen(
     val scope = rememberCoroutineScope()
     val dark = LocalBreezeDark.current
     val tint = CoolTint
-    val totalCodes = BrandIr.probeCount(brand.id, brand.codeCount)
+    val totalCodes = BrandIr.probeCount(brand.id)
     var index by rememberSaveable { mutableStateOf(0) }
     var naming by rememberSaveable { mutableStateOf(false) }
 
@@ -239,11 +238,7 @@ fun PairingScreen(
 @Composable
 private fun PulsingPowerButton(tint: Color, onClick: () -> Unit) {
     val reduceMotion = LocalReduceMotion.current
-    val elapsed by produceState(0L, reduceMotion) {
-        if (reduceMotion) return@produceState
-        val start = withFrameMillis { it }
-        while (true) withFrameMillis { value = it - start }
-    }
+    val elapsed by rememberFrameMillis(0L, paused = reduceMotion)
     // Layout box is the 88dp button; ring and pulse draw outside it like a CSS box-shadow.
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(88.dp)) {
         Canvas(Modifier.matchParentSize()) {
