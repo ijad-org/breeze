@@ -54,6 +54,9 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 ### Fixed on 2026-10-18
 
+- **Open-source licenses screen.** Settings → About now has "Open-source licenses" (`LicensesScreen`). It shows the full SIL OFL 1.1 for the bundled Plus Jakarta Sans (which the OFL requires to ship with the font), Apache 2.0 for AndroidX, Kotlin, kotlinx.coroutines, Okio and Guava ListenableFuture (everything else in `releaseRuntimeClasspath`), and Breeze's MIT license, from `res/raw`. It credits IRremoteESP8266 (LGPL-2.1) for the protocol layouts; whether the ported codecs themselves need LGPL terms is still open. The unused copy in `assets/licenses/` was removed. Checked in `ScreenRenderTest` (the OFL row opens and shows the text) and in the release APK (all three files survive resource shrinking).
+- **Target API 36.** Google Play requires it for new apps and updates since 2026-08-31. `compileSdk`/`targetSdk` are 36, AGP 8.7.3 became 8.13.2 and Gradle 8.9 became 8.13. Edge-to-edge and predictive back were already in place. On 600dp-wide and larger screens Android 16 ignores the portrait lock, so content is capped at a centred 480dp (`phoneWidth()`). `ScreenRenderTest` renders the Remote and Find code on a 1280×800dp landscape tablet and Welcome on an 841×701dp unfolded foldable; phone renders are byte-identical to before. **Not yet seen on a device**: a tablet or foldable emulator should check rotation (the activity is recreated, and state comes back from DataStore and `rememberSaveable`) and fold/unfold.
+
 - **Lint errors.** `lintDebug` reported 3 errors, now 0 (34 warnings remain). Two were `ProduceStateDoesNotAssignValue` false positives on the Welcome and Find code frame loops, now replaced by `rememberFrameMillis`. The third is the deliberate `currentBackStack` use for predictive back, now suppressed in place with the reason.
 
 ### Fixed on 2026-10-09
@@ -87,7 +90,7 @@ Items 1 to 11 from the previous plan, and the Welcome, Find code and missed-time
 
 ## Environment notes
 
-- Linux/cloud containers: install the SDK with `cmdline-tools` (`platforms;android-35`, `build-tools;34.0.0`) and set `sdk.dir` in `local.properties`. JDK 21 also builds there.
-- Build with JDK 17 on the Mac: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`. Gradle 8.9 can't run on Android Studio's bundled JDK 25. If the Kotlin daemon dies, add `-Pkotlin.compiler.execution.strategy=in-process`.
+- Linux/cloud containers: install the SDK with `cmdline-tools` (`platforms;android-36`, `build-tools;35.0.0`) and set `sdk.dir` in `local.properties`. JDK 21 also builds there.
+- Build with JDK 17 on the Mac: `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`. Gradle 8.13 can't run on Android Studio's bundled JDK 25. If the Kotlin daemon dies, add `-Pkotlin.compiler.execution.strategy=in-process`.
 - **emulator-5554 (`medium_phone`) is shared with other agents.** Ask before using it, always pass `-s emulator-5554`, and never run `adb kill-server`. There is a second AVD (`Medium_Phone_API_37.0`), but the host has 8 GB of RAM and swap was nearly full, so running two emulators at once is not viable.
 - The emulator currently has Breeze installed, the theme set to Dark, and exact alarms allowed for Breeze via appops. Restart the emulator if it shows "System UI / Process system isn't responding".

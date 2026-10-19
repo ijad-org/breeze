@@ -40,6 +40,7 @@ import com.ijad.breeze.timer.TimerScheduler
 import com.ijad.breeze.ui.brand.BrandSelectScreen
 import com.ijad.breeze.ui.legal.LegalDoc
 import com.ijad.breeze.ui.legal.LegalScreen
+import com.ijad.breeze.ui.legal.LicensesScreen
 import com.ijad.breeze.ui.pairing.PairingScreen
 import com.ijad.breeze.ui.remote.RemoteScreen
 import com.ijad.breeze.ui.settings.SettingsScreen
@@ -58,6 +59,7 @@ object Routes {
     const val Settings = "settings"
     const val Privacy = "privacy"
     const val Terms = "terms"
+    const val Licenses = "licenses"
 
     /** [repairId]: an existing AC whose code is being found again. */
     fun pairing(brandId: String, repairId: String? = null) =
@@ -216,7 +218,8 @@ fun BreezeNavHost(
                 onTimerReminders = { v -> scope.launch { repository.setTimerReminders(v) } },
                 onEcoTips = { v -> scope.launch { repository.setEcoTips(v) } },
                 onPrivacy = { navController.navigate(Routes.Privacy) },
-                onTerms = { navController.navigate(Routes.Terms) }
+                onTerms = { navController.navigate(Routes.Terms) },
+                onLicenses = { navController.navigate(Routes.Licenses) }
             )
         }
         screen(Routes.Privacy, navController, reduceMotion) {
@@ -224,6 +227,9 @@ fun BreezeNavHost(
         }
         screen(Routes.Terms, navController, reduceMotion) {
             LegalScreen(LegalDoc.Terms, onBack = { navController.popBackStack() })
+        }
+        screen(Routes.Licenses, navController, reduceMotion) {
+            LicensesScreen(onBack = { navController.popBackStack() })
         }
     }
 }

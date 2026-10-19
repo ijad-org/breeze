@@ -105,6 +105,7 @@ import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.BreezeToggle
 import com.ijad.breeze.ui.components.ButtonVariant
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.components.pressScale
 import com.ijad.breeze.ui.theme.AutoTint
@@ -220,6 +221,7 @@ fun RemoteScreen(
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(if (powered) state.mode.tint else AutoTint, intensity = if (powered) 1f else 0f)
+            .phoneWidth()
     ) {
         Column(
             modifier = Modifier
@@ -717,6 +719,7 @@ private fun EmptyRemote(onOpenSettings: () -> Unit, onAddAc: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(CoolTint)
+            .phoneWidth()
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {

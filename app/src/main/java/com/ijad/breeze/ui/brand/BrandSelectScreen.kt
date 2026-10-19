@@ -51,6 +51,7 @@ import com.ijad.breeze.ui.components.GlassCard
 import com.ijad.breeze.ui.components.RoundButton
 import com.ijad.breeze.ui.components.RowDivider
 import com.ijad.breeze.ui.components.breezeBackground
+import com.ijad.breeze.ui.components.phoneWidth
 import com.ijad.breeze.ui.components.glass
 import com.ijad.breeze.ui.theme.AutoTint
 import com.ijad.breeze.ui.theme.CoolTint
@@ -75,6 +76,7 @@ fun BrandSelectScreen(
         modifier = Modifier
             .fillMaxSize()
             .breezeBackground(tint)
+            .phoneWidth()
             .navigationBarsPadding()
             .imePadding()
     ) {
